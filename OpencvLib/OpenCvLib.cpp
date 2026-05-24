@@ -316,9 +316,26 @@ std::vector<LineSegment2D> OpenCvLib::FindLinesReturnLineSegment2D(const Bitmap&
 
 std::pair<std::vector<ShortLine>, std::vector<ShortLine>> OpenCvLib::FindLinesAfterCannyHorizonAndVerticalLines(const cv::Mat& gray, int min_length, int max_line_gap)
 {
+    if (gray.empty()) {
+        return {{}, {}};
+    }
+
     std::vector<ShortLine> verticals {};
     std::vector<ShortLine> horizontals {};
-    for (const auto& line : FindLines(gray, min_length, max_line_gap)) {
+    std::vector<cv::Vec4i> hough_lines {};
+    cv::HoughLinesP(
+        gray,
+        hough_lines,
+        1.0,
+        CV_PI / 4.0,
+        min_length,
+        min_length,
+        max_line_gap);
+
+    for (const auto& raw_line : hough_lines) {
+        const auto line = LineWithDescription {
+            Point {raw_line[0], raw_line[1]},
+            Point {raw_line[2], raw_line[3]}};
         if (line.IsVerticalLine()) {
             verticals.push_back(LineSegment2DHelper::ToShortPoint(LineSegment2D {line.Point1(), line.Point2()}));
         } else if (line.IsHorizonLine()) {
@@ -428,6 +445,15 @@ std::vector<TriangleWithDescription> OpenCvLib::FindTriangles(const cv::Mat& can
 
     std::vector<TriangleWithDescription> triangles {};
     for (const auto& contour : contours) {
+        if (contour.size() < 3) {
+            continue;
+        }
+
+        const auto bounding = cv::boundingRect(contour);
+        if (bounding.width > 60 || bounding.height > 60 || bounding.width * bounding.height <= 90) {
+            continue;
+        }
+
         std::vector<cv::Point> approx {};
         const auto epsilon = std::max(cv::arcLength(contour, true) * 0.05, 6.0);
         cv::approxPolyDP(contour, approx, epsilon, true);

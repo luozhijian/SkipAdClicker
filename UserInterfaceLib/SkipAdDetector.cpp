@@ -49,7 +49,48 @@ cv::Mat CropMat(const cv::Mat& input, const Rectangle& rect)
         return {};
     }
 
-    return input(cv::Rect(left, top, right - left, bottom - top)).clone();
+    return input(cv::Rect(left, top, right - left, bottom - top));
+}
+
+cv::Mat BitmapRegionToGrayMat(const Bitmap& bitmap, const Rectangle& region)
+{
+    if (bitmap.width <= 0 || bitmap.height <= 0 || bitmap.pixels.empty()) {
+        return {};
+    }
+
+    const int channels = bitmap.channels <= 0 ? 1 : bitmap.channels;
+    const int stride = bitmap.stride > 0 ? bitmap.stride : bitmap.width * channels;
+    const int left = std::max(0, region.Left());
+    const int top = std::max(0, region.Top());
+    const int right = std::min(bitmap.width, region.Right());
+    const int bottom = std::min(bitmap.height, region.Bottom());
+    if (left >= right || top >= bottom) {
+        return {};
+    }
+    const Rectangle bounded {left, top, right - left, bottom - top};
+
+    const auto offset =
+        static_cast<std::size_t>(bounded.y) * static_cast<std::size_t>(stride)
+        + static_cast<std::size_t>(bounded.x) * static_cast<std::size_t>(channels);
+    if (offset >= bitmap.pixels.size()) {
+        return {};
+    }
+
+    const int type = CV_MAKETYPE(CV_8U, std::max(1, channels));
+    cv::Mat view(bounded.height, bounded.width, type, const_cast<std::byte*>(bitmap.pixels.data() + offset), stride);
+    if (channels == 1) {
+        return view.clone();
+    }
+
+    cv::Mat gray {};
+    if (channels == 4) {
+        cv::cvtColor(view, gray, cv::COLOR_BGRA2GRAY);
+    } else if (channels == 3) {
+        cv::cvtColor(view, gray, cv::COLOR_BGR2GRAY);
+    } else {
+        gray = view.reshape(1).clone();
+    }
+    return gray;
 }
 
 Rectangle Intersect(const Rectangle& a, const Rectangle& b)
@@ -221,9 +262,53 @@ bool VerifySkipAdBarPart(const cv::Mat& gray, const TriangleWithDescription& tri
     return right_max - left_max + 2 > static_cast<int>(length / 3.0);
 }
 
-bool HasLikelyTextBlock(const cv::Mat& filtered_gray, const SettingCanny& canny_setting, int min_width)
+bool ContainsTextBlockFromGray(const cv::Mat& gray, const SettingCanny& canny_setting, int min_width, float text_block_threshold)
 {
-    return !OpenCvLib::FindTextBlocksFromGray(filtered_gray, canny_setting, min_width, 0.3F).empty();
+    if (gray.empty()) {
+        return false;
+    }
+
+    cv::Mat source {};
+    if (gray.channels() == 1) {
+        source = gray;
+    } else {
+        cv::cvtColor(gray, source, gray.channels() == 4 ? cv::COLOR_BGRA2GRAY : cv::COLOR_BGR2GRAY);
+    }
+
+    const int threshold1 = canny_setting.threshold1 > 0 ? canny_setting.threshold1 : 50;
+    const int threshold2 = canny_setting.threshold2 > 0 ? canny_setting.threshold2 : 150;
+    cv::Mat canny {};
+    cv::Canny(source, canny, threshold1, threshold2, 3, canny_setting.l2_gradient);
+
+    cv::Mat grad {};
+    static const cv::Mat ellipse_kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
+    cv::morphologyEx(canny, grad, cv::MORPH_GRADIENT, ellipse_kernel, cv::Point(-1, -1), 1, cv::BORDER_DEFAULT);
+
+    cv::Mat bw {};
+    cv::threshold(grad, bw, 0, 255, cv::THRESH_OTSU | cv::THRESH_BINARY);
+
+    cv::Mat connected {};
+    static const cv::Mat close_kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(9, 3));
+    cv::morphologyEx(bw, connected, cv::MORPH_CLOSE, close_kernel, cv::Point(-1, -1), 1, cv::BORDER_DEFAULT);
+
+    std::vector<std::vector<cv::Point>> contours {};
+    cv::findContours(connected, contours, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
+    const cv::Rect image_rect {0, 0, source.cols, source.rows};
+    for (const auto& contour : contours) {
+        const auto bounding = cv::boundingRect(contour) & image_rect;
+        if (bounding.empty() || bounding.height <= 3 || bounding.height > 500 || bounding.width < min_width) {
+            continue;
+        }
+
+        const double coverage =
+            static_cast<double>(cv::countNonZero(grad(bounding)))
+            / static_cast<double>(bounding.width * bounding.height);
+        if (coverage > text_block_threshold) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 bool VerifySkipAdWordPart(const cv::Mat& gray, const SettingCanny& canny_setting, const TriangleWithDescription& triangle, int color, int delta)
@@ -235,7 +320,7 @@ bool VerifySkipAdWordPart(const cv::Mat& gray, const SettingCanny& canny_setting
 
     const auto cropped = CropMat(gray, rect);
     const auto filtered = OpenCvLib::FilterMatByColor(cropped, color, delta);
-	return OpenCvLib::FindTextBlocksFromGray(filtered, canny_setting, rect.height, 0.4F).size() >= 1;
+	return ContainsTextBlockFromGray(filtered, canny_setting, rect.height, 0.4F);
 }
 
 bool IsBoundColorBlack(const cv::Mat& gray, const TriangleWithDescription& triangle)
@@ -277,20 +362,26 @@ bool VerifySkipAd(const cv::Mat& gray, const cv::Mat& canny, const TriangleWithD
     return SkipAdDetector::VerifyNearCorner(canny, triangle);
 }
 
-} // namespace
-
-std::vector<TriangleWithDescription> SkipAdDetector::FindSkipAd(const Bitmap& image, const SettingLineDetection& line_detection)
+std::vector<TriangleWithDescription> FindSkipAdInGray(
+    const cv::Mat& gray,
+    const SettingLineDetection& line_detection)
 {
-    const auto gray = OpenCvLib::ToGrayMat(image);
     if (gray.empty()) {
         return {};
     }
 
-    const auto canny = OpenCvLib::ApplyCannyReturnRawIfFailed(gray, true, line_detection.setting_canny.threshold1, line_detection.setting_canny.threshold2);
+    const auto canny = OpenCvLib::ApplyCannyReturnRawIfFailed(
+        gray,
+        true,
+        line_detection.setting_canny.threshold1,
+        line_detection.setting_canny.threshold2);
     auto triangles = OpenCvLib::FindTriangles(canny);
     std::vector<TriangleWithDescription> result {};
     std::vector<Point> centers_processed {};
+    result.reserve(triangles.size());
+    centers_processed.reserve(triangles.size());
     constexpr int duplicate_delta = 4;
+
     for (const auto& triangle : triangles) {
         const auto center = triangle.Center();
         const bool is_close_to_processed = PointHelper::IsCloseToAny(center, centers_processed, duplicate_delta);
@@ -304,6 +395,47 @@ std::vector<TriangleWithDescription> SkipAdDetector::FindSkipAd(const Bitmap& im
         }
     }
     return result;
+}
+
+std::optional<TriangleWithDescription> FindFirstSkipAdInGray(
+    const cv::Mat& gray,
+    const SettingLineDetection& line_detection)
+{
+    if (gray.empty()) {
+        return std::nullopt;
+    }
+
+    const auto canny = OpenCvLib::ApplyCannyReturnRawIfFailed(
+        gray,
+        true,
+        line_detection.setting_canny.threshold1,
+        line_detection.setting_canny.threshold2);
+    auto triangles = OpenCvLib::FindTriangles(canny);
+    std::vector<Point> centers_processed {};
+    centers_processed.reserve(triangles.size());
+    constexpr int duplicate_delta = 4;
+
+    for (const auto& triangle : triangles) {
+        const auto center = triangle.Center();
+        const bool is_close_to_processed = PointHelper::IsCloseToAny(center, centers_processed, duplicate_delta);
+        centers_processed.push_back(center);
+        if (is_close_to_processed) {
+            continue;
+        }
+
+        if (VerifySkipAd(gray, canny, triangle, line_detection.setting_canny)) {
+            return triangle;
+        }
+    }
+    return std::nullopt;
+}
+
+} // namespace
+
+std::vector<TriangleWithDescription> SkipAdDetector::FindSkipAd(const Bitmap& image, const SettingLineDetection& line_detection)
+{
+    const auto gray = BitmapRegionToGrayMat(image, Rectangle {0, 0, image.width, image.height});
+    return FindSkipAdInGray(gray, line_detection);
 }
 
 void SkipAdDetector::RegisterBindings(automationtest::utilities::status::LoadFunctions& load_functions)
@@ -329,7 +461,13 @@ void SkipAdDetector::RegisterBindings(automationtest::utilities::status::LoadFun
 
 std::any SkipAdDetector::ClickOnSkipAd(const std::any& bitmaps, const std::any& line_detection)
 {
-    const auto* bitmaps_pointer = std::any_cast<std::vector<LocatedBitmap>>(&bitmaps);
+    const std::vector<LocatedBitmap>* bitmaps_pointer = std::any_cast<std::vector<LocatedBitmap>>(&bitmaps);
+    if (bitmaps_pointer == nullptr) {
+        if (const auto* shared_bitmaps = std::any_cast<std::shared_ptr<std::vector<LocatedBitmap>>>(&bitmaps);
+            shared_bitmaps != nullptr && *shared_bitmaps != nullptr) {
+            bitmaps_pointer = shared_bitmaps->get();
+        }
+    }
     if (bitmaps_pointer == nullptr) {
         return {};
     }
@@ -354,12 +492,13 @@ std::optional<Bitmap> SkipAdDetector::ClickOnSkipAd(const std::vector<LocatedBit
     }
 
     for (const auto& [image, location] : bitmaps) {
-        const auto triangles = FindSkipAd(image, line_detection);
-        if (triangles.empty()) {
+        const auto gray = BitmapRegionToGrayMat(image, Rectangle {0, 0, image.width, image.height});
+        const auto triangle = FindFirstSkipAdInGray(gray, line_detection);
+        if (!triangle.has_value()) {
             continue;
         }
 
-        const auto center = triangles.front().Center();
+        const auto center = triangle->Center();
         Logger::LogToView( "Found skip ad triangle at (" + std::to_string(center.x) + ", " + std::to_string(center.y) + ") in the " + BitmapHelper::DebugSave(image) + " bitmap." );
         mouse_click(Point {center.x + location.x, center.y + location.y});
         return std::nullopt;

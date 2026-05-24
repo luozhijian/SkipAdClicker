@@ -5,7 +5,6 @@
 #include "../../Utilities/Exceptions/TestContinueException.hpp"
 #include "../../Utilities/Exceptions/TestException.hpp"
 #include "../../Utilities/Types/EnumOnExcpetionAction.hpp"
-#include "../../Utilities/Logger.hpp"
 
 #include <any>
 #include <thread>
@@ -17,7 +16,6 @@ using automationtest::utilities::exceptions::TestCancellingException;
 using automationtest::utilities::exceptions::TestContinueException;
 using automationtest::utilities::exceptions::TestException;
 using automationtest::utilities::types::EnumOnExcpetionAction;
-using automationtest::utilities::Logger;
 
 namespace {
 
@@ -123,7 +121,7 @@ void WhileLoop::PlayActions(const ActionRunner& runner)
         if (end_time.has_value() && std::chrono::system_clock::now() >= end_time.value()) {
             break;
         }
-        Logger::Info(std::format("{}", loop), "WhileLoop");
+
         bool running_experienced_error = false;
         try {
             for (auto& child : ChildActions()) {

@@ -55,6 +55,7 @@ ui_*.h
 *.log
 Logs/
 Temp/
+enc_temp_folder/
 *.tmp
 *.temp
 

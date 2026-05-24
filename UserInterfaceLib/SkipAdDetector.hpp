@@ -6,6 +6,7 @@
 #include "../Utilities/Settings/SettingLineDetection.hpp"
 #include "../Utilities/TriangleWithDescription.hpp"
 
+#include <memory>
 #include <optional>
 #include <utility>
 #include <vector>

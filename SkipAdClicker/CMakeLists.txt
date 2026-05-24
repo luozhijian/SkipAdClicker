@@ -33,7 +33,7 @@ target_link_libraries(SkipAdClicker
 )
 
 if(WIN32)
-    target_link_libraries(SkipAdClicker PRIVATE user32)
+    target_link_libraries(SkipAdClicker PRIVATE user32 gdi32)
 endif()
 
 set_target_properties(SkipAdClicker PROPERTIES
