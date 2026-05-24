@@ -1,0 +1,11 @@
+{
+  "performPyrDown": false,
+  "morphology_x": 5,
+  "morphology_y": 2,
+  "performSecondMorphology": true,
+  "morphology2_x": 5,
+  "morphology2_y": 2,
+  "ocrLanguage":null,
+  "canny_threshold1":200,
+  "canny_threshold2":250
+}

@@ -1,0 +1,16 @@
+﻿[$RootKey$\Packages\{F76EC0C6-4C70-491C-91F8-AD66215B183D}]
+@="OpenCV cv::Mat Bitmap Visualizer"
+"InprocServer32"="$WinDir$\SYSTEM32\MSCOREE.DLL"
+"Class"="AutoTestWithAI.OpenCvMatBitmapVisualizer.OpenCvMatBitmapVisualizerPackage"
+"CodeBase"="$PackageFolder$\OpenCvMatBitmapVisualizer.dll"
+"AllowsBackgroundLoad"=dword:00000000
+
+[$RootKey$\Services\{73D1AA4A-926B-41A9-9E54-D18FF81C6B22}]
+@="{F76EC0C6-4C70-491C-91F8-AD66215B183D}"
+"Name"="OpenCvMatBitmapVisualizerService"
+"IsAsyncQueryable"=dword:00000000
+"IsFreeThreaded"=dword:00000000
+"IsCacheable"=dword:00000000
+
+[$RootKey$\BindingPaths\{F76EC0C6-4C70-491C-91F8-AD66215B183D}]
+"$PackageFolder$"=""

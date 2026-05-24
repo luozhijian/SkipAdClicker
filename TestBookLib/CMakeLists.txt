@@ -1,0 +1,10 @@
+file(GLOB_RECURSE AUTOMATIOTEST_TESTBOOKLIB_HEADERS CONFIGURE_DEPENDS "*.hpp")
+file(GLOB_RECURSE AUTOMATIOTEST_TESTBOOKLIB_SOURCES CONFIGURE_DEPENDS "*.cpp")
+
+add_library(AutomatioTestTestBookLib
+    ${AUTOMATIOTEST_TESTBOOKLIB_HEADERS}
+    ${AUTOMATIOTEST_TESTBOOKLIB_SOURCES}
+)
+
+target_include_directories(AutomatioTestTestBookLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(AutomatioTestTestBookLib PUBLIC AutomatioTestUtilities)

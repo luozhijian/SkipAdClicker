@@ -1,0 +1,75 @@
+# Build output
+build/
+out/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+install_manifest.txt
+Testing/
+
+# Visual Studio / MSBuild
+.vs/
+*.sln
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.vcxproj.user
+*.VC.db
+*.VC.VC.opendb
+ipch/
+x64/
+x86/
+Win32/
+Debug/
+Release/
+RelWithDebInfo/
+MinSizeRel/
+
+# Compiled objects, libraries, and executables
+*.obj
+*.o
+*.iobj
+*.ipdb
+*.pdb
+*.idb
+*.ilk
+*.lib
+*.exp
+*.dll
+*.exe
+*.app
+*.so
+*.dylib
+*.a
+
+# Qt generated files
+*_autogen/
+mocs_compilation*.cpp
+qrc_*.cpp
+ui_*.h
+
+# Logs and runtime files
+*.log
+Logs/
+Temp/
+*.tmp
+*.temp
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# NuGet / Visual Studio extension build artifacts
+packages/
+bin/
+obj/
+*.nupkg
+*.vsix

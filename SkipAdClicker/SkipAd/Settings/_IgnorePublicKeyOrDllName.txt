@@ -1,0 +1,7 @@
+PublicToken:b03f5f7f11d50a3a
+PublicToken:31bf3856ad364e35
+PublicToken:cc7b13ffcd2ddd51
+PublicToken:31bf3856ad364e35
+Name:System.Private.Windows.Core
+
+

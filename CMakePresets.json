@@ -1,0 +1,45 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "x64-Debug",
+      "displayName": "x64 Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/x64-Debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": "C:/Tools/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "CMAKE_PREFIX_PATH": "C:/Tools/vcpkg/installed/x64-windows;C:/Qt/6.11.0/msvc2022_64",
+        "OpenCV_DIR": "C:/Tools/vcpkg/installed/x64-windows/share/opencv4",
+        "Protobuf_DIR": "C:/Tools/vcpkg/installed/x64-windows/share/protobuf"
+      }
+    },
+    {
+      "name": "x64-Release",
+      "displayName": "x64 Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/x64-Release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": "C:/Tools/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "CMAKE_PREFIX_PATH": "C:/Tools/vcpkg/installed/x64-windows;C:/Qt/6.11.0/msvc2022_64",
+        "OpenCV_DIR": "C:/Tools/vcpkg/installed/x64-windows/share/opencv4",
+        "Protobuf_DIR": "C:/Tools/vcpkg/installed/x64-windows/share/protobuf"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "x64-Debug",
+      "configurePreset": "x64-Debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "x64-Release",
+      "configurePreset": "x64-Release",
+      "configuration": "Release"
+    }
+  ]
+}

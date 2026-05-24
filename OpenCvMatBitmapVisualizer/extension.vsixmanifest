@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011">
+  <Metadata>
+    <Identity Id="AutoTestWithAI.OpenCvMatBitmapVisualizer" Version="1.1.4" Language="en-US" Publisher="AutoTestWithAI" />
+    <DisplayName>OpenCV cv::Mat Bitmap Visualizer</DisplayName>
+    <Description xml:space="preserve">Adds a Visual Studio C++ debugger UI visualizer for OpenCV cv::Mat values, rendering CV_8UC1, CV_8UC3, and CV_8UC4 mats as real bitmaps.</Description>
+    <Tags>OpenCV;cv::Mat;Natvis;C++;Debugger;Bitmap;UIVisualizer</Tags>
+  </Metadata>
+  <Installation>
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,19.0)">
+      <ProductArchitecture>amd64</ProductArchitecture>
+    </InstallationTarget>
+    <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[17.0,19.0)">
+      <ProductArchitecture>amd64</ProductArchitecture>
+    </InstallationTarget>
+    <InstallationTarget Id="Microsoft.VisualStudio.Enterprise" Version="[17.0,19.0)">
+      <ProductArchitecture>amd64</ProductArchitecture>
+    </InstallationTarget>
+  </Installation>
+  <Prerequisites>
+    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" DisplayName="Visual Studio core editor" Version="[17.0,19.0)" />
+  </Prerequisites>
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.VsPackage" Path="OpenCvMatBitmapVisualizer.pkgdef" />
+    <Asset Type="NativeVisualizer" Path="OpenCvMatBitmap.natvis" />
+    <Asset Type="NativeCrossPlatformVisualizer" Path="OpenCvMatBitmap.natvis" />
+  </Assets>
+</PackageManifest>
+
+
+
+
+
+
+
+

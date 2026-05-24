@@ -1,0 +1,27 @@
+{
+	"$schema": "",
+	"__meta": {
+	"type":"SettingLineDetection",
+    "description": "Setting Line Detecting",
+    "version": "1.0",
+    "created": "2025-08-24T12:00:00Z"
+  },
+  "AngleResolutionInRadians": 1.04,
+  "HoughLinesThreshold" : 9, 
+  "HoughLinesMinLineLength": 12,
+  "HoughLinesMaxLineGap":2,
+ 
+   "SettingThreshold" :{
+	  "ApplyThreshold": "None",
+	  "ThresholdValue":  0,
+	  "ThresholdMaxValue": 0
+  },
+
+   
+  "SettingCanny" :{
+	  "Threshold1": 90,
+	  "Threshold2": 150,
+	  "ApertureSize":  3,
+	  "L2gradient": true
+	}
+}

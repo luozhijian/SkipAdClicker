@@ -1,0 +1,9 @@
+#relative path is relative to this file
+Bitmap Static_ChromeReload .\Icons\Reload.bmp
+Bitmap Static_ChromeStop .\Icons\Stop.bmp
+
+SettingFindIcon SettingFindIconSkipAd .\SettingFiles\SettingFindIconSkipAd.json
+
+SettingCanny SettingCannySkipAd .\SettingFiles\SettingCannySkipAd.json
+
+SettingLineDetection SettingLineDetectionSkipAd .\SettingFiles\SettingLineDetectionSkipAd.json

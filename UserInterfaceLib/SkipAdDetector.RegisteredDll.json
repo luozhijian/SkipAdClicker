@@ -1,0 +1,31 @@
+﻿{
+    "name":  "SkipAdDetector",
+    "file_path":  "UserInterfaceLib/SkipAdDetector.dll",
+    "description":  "TestBookActionFunction registrations generated from C:\\Luo\\Repos\\AutoTestWithAI\\UserInterfaceLib\\SkipAdDetector.cs",
+    "version":  "1.0",
+    "company":  "AutoTestWithAI",
+    "methods":  [
+                    {
+                        "name":  "ClickOnSkipAd",
+                        "csharp_method":  "ClickOnSkipAd",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.SkipAdDetector",
+                        "is_static":  true,
+                        "parameters":  [
+                                           {
+                                               "name":  "bitmaps",
+                                               "type":  "List\u003c(Bitmap Bitmap, Point Location)\u003e",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "lineDetection",
+                                               "type":  "SettingLineDetection",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           }
+                                       ]
+                    }
+                ]
+}

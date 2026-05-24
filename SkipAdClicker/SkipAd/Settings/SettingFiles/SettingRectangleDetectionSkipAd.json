@@ -1,0 +1,15 @@
+{ 
+	"$schema": "",
+	"__meta": {
+	"type":"SettingRectangleDetection",
+    "description": "User profile file",
+    "version": "1.0",
+    "created": "2025-08-24T12:00:00Z"
+  },
+  
+  "MinArea": 5000,
+  "MinHeight":15,
+  "MinWidth":80,
+  "CannyThreshold": 180,
+  "CannyThresholdLinking": 120
+}

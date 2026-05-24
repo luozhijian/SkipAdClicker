@@ -1,0 +1,1828 @@
+﻿{
+    "name":  "ScanBitmapForControl",
+    "file_path":  "UserInterfaceLib/ScanBitmapForControl.dll",
+    "description":  "TestBookActionFunction registrations generated from C:\\Luo\\Repos\\AutoTestWithAI\\UserInterfaceLib\\ScanBitmapForControl.cs",
+    "version":  "1.0",
+    "company":  "AutoTestWithAI",
+    "methods":  [
+                    {
+                        "name":  "FindRectangleWithText",
+                        "csharp_method":  "FindRectangleWithText",
+                        "return_type":  "Rectangle",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "setting",
+                                               "type":  "SettingRectangleDetection",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "defaultLanguage",
+                                               "type":  "string",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  "eng"
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "GetBitmapByPart",
+                        "csharp_method":  "GetBitmapByPart",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  true,
+                        "parameters":  [
+                                           {
+                                               "name":  "bitmap",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "layout",
+                                               "type":  "ScreenLayout",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "partName",
+                                               "type":  "string",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "FindRectangleWithTextAndInput",
+                        "csharp_method":  "FindRectangleWithTextAndInput",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "setting",
+                                               "type":  "SettingRectangleDetection",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "input_text",
+                                               "type":  "string",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "second_wait",
+                                               "type":  "double",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  0.2
+                                           },
+                                           {
+                                               "name":  "defaultLanguage",
+                                               "type":  "string",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  "eng"
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickPointAndInputText",
+                        "csharp_method":  "FindRectangleWithTextAndInput",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "point",
+                                               "type":  "Point",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "input_text",
+                                               "type":  "string",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "ms_wait",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  200
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickNearPoint",
+                        "csharp_method":  "ClickNearPoint",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "point",
+                                               "type":  "Point",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "x_shift",
+                                               "type":  "int",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "y_shift",
+                                               "type":  "int",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "ms_wait",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  200
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "FindRectangleWithTextAndClick",
+                        "csharp_method":  "FindRectangleWithTextAndClick",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "targetString",
+                                               "type":  "string",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "threshold",
+                                               "type":  "int",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "ms_wait",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  200
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickOnLinedTextNearLastClick",
+                        "csharp_method":  "ClickOnLinedTextNearLastClick",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "screenshot_withPopup",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "recentPoint",
+                                               "type":  "Point",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "target_string",
+                                               "type":  "string",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "width",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  400
+                                           },
+                                           {
+                                               "name":  "height",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  50
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "InPopupClickOnLinedText",
+                        "csharp_method":  "InPopupClickOnLinedText",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "screenshot_withPopup",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "screenshot",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "target_string",
+                                               "type":  "string",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "width",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  400
+                                           },
+                                           {
+                                               "name":  "height",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  50
+                                           },
+                                           {
+                                               "name":  "sleepSeconds",
+                                               "type":  "double",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  2
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "InPopupClickOnText",
+                        "csharp_method":  "InPopupClickOnText",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "screenshot_withPopup",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "screenshot",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "target_string",
+                                               "type":  "string",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "width",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  400
+                                           },
+                                           {
+                                               "name":  "height",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  50
+                                           },
+                                           {
+                                               "name":  "sleepSeconds",
+                                               "type":  "double",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  0.5
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "InPopupClickOnLinedTextStartWithIcon",
+                        "csharp_method":  "InPopupClickOnLinedTextStartWithIcon",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "screenshot_withPopup",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "screenshot",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "target_string",
+                                               "type":  "string",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "width",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  400
+                                           },
+                                           {
+                                               "name":  "height",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  50
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickOnIcon",
+                        "csharp_method":  "ClickOnIcon",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "threshold",
+                                               "type":  "double",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "icon",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "defaultTimeSeconds",
+                                               "type":  "double",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  0.1
+                                           },
+                                           {
+                                               "name":  "location",
+                                               "type":  "Rectangle?",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "x_percent",
+                                               "type":  "double",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  0.5
+                                           },
+                                           {
+                                               "name":  "y_percent",
+                                               "type":  "double",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  0.5
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickOnIconByConfig",
+                        "csharp_method":  "ClickOnIconByConfig",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "icon",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "findIcon",
+                                               "type":  "SettingFindIcon",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "defaultTimeSeconds",
+                                               "type":  "double",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  0.1
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickOnAnyIconByConfig",
+                        "csharp_method":  "ClickOnAnyIconByConfig",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "icons",
+                                               "type":  "ListOfMat",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "findIcon",
+                                               "type":  "SettingFindIcon",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "defaultTimeSeconds",
+                                               "type":  "double",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  0.1
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickOnAnyIcon",
+                        "csharp_method":  "ClickOnAnyIcon",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "threshold",
+                                               "type":  "double",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "icon1",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "icon2",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "defaultTimeSeconds",
+                                               "type":  "double",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  1
+                                           },
+                                           {
+                                               "name":  "icon3",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "icon4",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickOnIconIfExists",
+                        "csharp_method":  "ClickOnIconIfExists",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "threshold",
+                                               "type":  "double",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "icon",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "defaultTimeSeconds",
+                                               "type":  "double",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  0.1
+                                           },
+                                           {
+                                               "name":  "location",
+                                               "type":  "Rectangle?",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickAllIcons",
+                        "csharp_method":  "ClickAllIcon",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "threshold",
+                                               "type":  "double",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "icon",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "defaultTimeSeconds",
+                                               "type":  "double",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  0.1
+                                           },
+                                           {
+                                               "name":  "location",
+                                               "type":  "Rectangle?",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickAllIconInLayout",
+                        "csharp_method":  "ClickAllIconInLayout",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "threshold",
+                                               "type":  "double",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "icon",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "defaultTimeSeconds",
+                                               "type":  "double",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  0.1
+                                           },
+                                           {
+                                               "name":  "layoutName",
+                                               "type":  "string",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "layoutPartName",
+                                               "type":  "string",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickOnText",
+                        "csharp_method":  "ClickOnText",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "validateText",
+                                               "type":  "string",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "defaultTimeMs",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  1000
+                                           },
+                                           {
+                                               "name":  "rangeRectangle",
+                                               "type":  "Rectangle?",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickOnTextWithShift",
+                        "csharp_method":  "ClickOnTextWithShift",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "shiftInHeight",
+                                               "type":  "double",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "defaultTimeMs",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  1000
+                                           },
+                                           {
+                                               "name":  "rangeRectangle",
+                                               "type":  "Rectangle?",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickOnTextWithShiftThenInput",
+                        "csharp_method":  "ClickOnTextWithShiftThenInput",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "shiftInHeight",
+                                               "type":  "double",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "inputText",
+                                               "type":  "string",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "milliSecondsToWait",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  1000
+                                           },
+                                           {
+                                               "name":  "rangeRectangle",
+                                               "type":  "Rectangle?",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "TextSendUsingSendInput",
+                                               "type":  "string",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "FindOneText",
+                        "csharp_method":  "FindOneText",
+                        "return_type":  "bool",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "validateText",
+                                               "type":  "string",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "rangeRectangle",
+                                               "type":  "Rectangle?",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickOnTextWithLayout",
+                        "csharp_method":  "ClickOnTextWithLayout",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "layout",
+                                               "type":  "string",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "layoutPart",
+                                               "type":  "string",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "validateText",
+                                               "type":  "string",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "defaultTimeSeconds",
+                                               "type":  "double",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  1
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickOnTextWhite",
+                        "csharp_method":  "ClickOnTextWhite",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "FindColorFilledRectangleWithTextAndClick",
+                        "csharp_method":  "FindColorFilledRectangleWithTextAndClick",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "color",
+                                               "type":  "Color",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "target_string",
+                                               "type":  "string",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "milliSecondsToWait",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  2000
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickTextWithBackground",
+                        "csharp_method":  "ClickTextWithBackground",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "color",
+                                               "type":  "Color",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "target_string",
+                                               "type":  "string",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "milliSecondsToWait",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  2000
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickFirstRectangleWithColorAndTextOnSameRow",
+                        "csharp_method":  "ClickFirstRectangleWithColorAndTextOnSameRow",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "color",
+                                               "type":  "Color",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "minSize",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  10
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "FindColorFilledRectangleWithSpcialColorTextAndClick",
+                        "csharp_method":  "FindColorFilledRectangleWithSpcialColorTextAndClick",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "color",
+                                               "type":  "Color",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "textColor",
+                                               "type":  "Color",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "MouseHoverOnPoint",
+                        "csharp_method":  "MouseHoverOnPoint",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "location",
+                                               "type":  "Point",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "delayMsBeforeScreenshot",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  1000
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "MouseHoverOnText",
+                        "csharp_method":  "MouseHoverOnText_Random",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "delayBeforeScreenshot",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  1000
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "MouseHoverOnTextPartOfScreen",
+                        "csharp_method":  "MouseHoverOnTextPartOfScreen",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "partLocation",
+                                               "type":  "Rectangle",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "delayBeforeScreenshot",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  1000
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickSpecificColorTextWithSpecificBackground",
+                        "csharp_method":  "ClickSpecificColorTextWithSpecificBackground",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "image",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "textColor",
+                                               "type":  "Color",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "color",
+                                               "type":  "Color",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "InPopupSelectDate",
+                        "csharp_method":  "InPopupSelectDate",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "withCalendar_popup",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "choseDate_screen",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "start_date",
+                                               "type":  "DateTime",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "end_date",
+                                               "type":  "DateTime",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "RecreationGovSelectDate",
+                        "csharp_method":  "RecreationGovSelectDate",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "withCalendar",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "start_date",
+                                               "type":  "DateTime",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "end_date",
+                                               "type":  "DateTime",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickOnTextWithScrollBar",
+                        "csharp_method":  "ClickOnTextWithScrollBar",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "bitmapWithScrollbar",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "target_string",
+                                               "type":  "string",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "defaultWaitMs",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  1000
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickOnTextWithScrollBarWithTextNearBy",
+                        "csharp_method":  "ClickOnTextWithScrollBarWithTextNearBy",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "bitmapWithScrollbar",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "location",
+                                               "type":  "string",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regexForText",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regexForClick",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "validateText",
+                                               "type":  "string",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "waitMilliSeconds",
+                                               "type":  "int",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  1500
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickOnTextNearIconWithScrollBar",
+                        "csharp_method":  "ClickOnTextNearIconWithScrollBar",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "bitmapWithScrollbar",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "bitmapIcon",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "regex",
+                                               "type":  "Regex",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "target_string",
+                                               "type":  "string",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ClickOnPoint",
+                        "csharp_method":  "ClickOnPoint",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "p",
+                                               "type":  "Point",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "defaultTimeSeconds",
+                                               "type":  "double",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  0.1
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "RightClickOnPoint",
+                        "csharp_method":  "RightClickOnPoint",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "p",
+                                               "type":  "Point",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "defaultTimeSeconds",
+                                               "type":  "double",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  1
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "Debugger_Break",
+                        "csharp_method":  "Debugger_Break",
+                        "return_type":  "void",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+
+                                       ]
+                    },
+                    {
+                        "name":  "SleepSeconds",
+                        "csharp_method":  "SleepSeconds",
+                        "return_type":  "void",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  true,
+                        "parameters":  [
+                                           {
+                                               "name":  "seconds",
+                                               "type":  "double",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "WaitForClickPopup",
+                        "csharp_method":  "WaitForClickPopup",
+                        "return_type":  "void",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+
+                                       ]
+                    },
+                    {
+                        "name":  "WaitIfFindingIconInScreen",
+                        "csharp_method":  "WaitIfFindingIconInScreen",
+                        "return_type":  "bool",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "icon",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "threshold",
+                                               "type":  "double",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "totalSeconds",
+                                               "type":  "int",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "secondsDelayToTakeScreenshot",
+                                               "type":  "double",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "WaitIfFindingBitmap",
+                        "csharp_method":  "WaitIfFindingBitmap",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "largeBitmap",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "threshold",
+                                               "type":  "double",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "totalSeconds",
+                                               "type":  "double",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "secondForCheckEvery",
+                                               "type":  "int",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "smallBitmap1",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "smallBitmap2",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "smallBitmap3",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "smallBitmap4",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "TakeScreenShot",
+                        "csharp_method":  "TakeScreenShot",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+
+                                       ]
+                    },
+                    {
+                        "name":  "CheckIfFindingBitmaps",
+                        "csharp_method":  "CheckIfFindingBitmaps",
+                        "return_type":  "bool",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "largeBitmap",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "threshold",
+                                               "type":  "double",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "smallBitmap1",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "smallBitmap2",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "smallBitmap3",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "smallBitmap4",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "IfFindingBitmapsClickFirstBitmap",
+                        "csharp_method":  "IfFindingBitmapsClickFirstBitmap",
+                        "return_type":  "Bitmap",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "largeBitmap",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "threshold",
+                                               "type":  "double",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "smallBitmap1",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "smallBitmap2",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "secondsSleepAfterClick",
+                                               "type":  "double",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  0.5
+                                           },
+                                           {
+                                               "name":  "smallBitmap3",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           },
+                                           {
+                                               "name":  "smallBitmap4",
+                                               "type":  "Bitmap",
+                                               "has_default_value":  true,
+                                               "is_out":  false,
+                                               "default_value":  null
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "DisableMouseAcceleration",
+                        "csharp_method":  "DisableMouseAcceleration",
+                        "return_type":  "void",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+
+                                       ]
+                    },
+                    {
+                        "name":  "DisableMouseAcceleration",
+                        "csharp_method":  "MoveFileToAnotherFolder",
+                        "return_type":  "void",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  false,
+                        "parameters":  [
+                                           {
+                                               "name":  "sourceFolder",
+                                               "type":  "string",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "targetFolder",
+                                               "type":  "string",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "fileappendix",
+                                               "type":  "string",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "MoveFilesToAnotherFolder",
+                        "csharp_method":  "MoveFilesToAnotherFolder",
+                        "return_type":  "void",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  true,
+                        "parameters":  [
+                                           {
+                                               "name":  "sourceFolder",
+                                               "type":  "string",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "targetFolder",
+                                               "type":  "string",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           },
+                                           {
+                                               "name":  "fileappendix",
+                                               "type":  "string",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "KillProcesses",
+                        "csharp_method":  "KillProcesses",
+                        "return_type":  "void",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  true,
+                        "parameters":  [
+                                           {
+                                               "name":  "processName",
+                                               "type":  "string",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "StoreTrue",
+                        "csharp_method":  "StoreTrue",
+                        "return_type":  "bool",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  true,
+                        "parameters":  [
+
+                                       ]
+                    },
+                    {
+                        "name":  "StoreFalse",
+                        "csharp_method":  "StoreFalse",
+                        "return_type":  "bool",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  true,
+                        "parameters":  [
+
+                                       ]
+                    },
+                    {
+                        "name":  "StoreValue",
+                        "csharp_method":  "StoreValue",
+                        "return_type":  "double",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  true,
+                        "parameters":  [
+                                           {
+                                               "name":  "i",
+                                               "type":  "double",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           }
+                                       ]
+                    },
+                    {
+                        "name":  "ShowMessageBox",
+                        "csharp_method":  "ShowMessageBox",
+                        "return_type":  "void",
+                        "declaring_type":  "AutoTestWithAI.UserInterfaceLib.ScanBitmapForControl",
+                        "is_static":  true,
+                        "parameters":  [
+                                           {
+                                               "name":  "message",
+                                               "type":  "string",
+                                               "has_default_value":  false,
+                                               "is_out":  false
+                                           }
+                                       ]
+                    }
+                ]
+}
