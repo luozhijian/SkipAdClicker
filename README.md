@@ -2,7 +2,7 @@
 
 SkipAdClicker is a desktop automation tool that uses screenshots, OCR, and image detection to find and click "Skip Ad" style controls. The project is written in C++ with Qt for the UI, OpenCV for image processing, and Tesseract for OCR.
 
-It is fully tested in windows, is working on Linux and MacOS.   Windows application is released at Microsoft Store: https://apps.microsoft.com/detail/9nr67kb8hr4d?hl=en-US&gl=US
+It is fully tested on Windows. Linux and macOS support is in progress: the shared OpenCV detector is portable, non-Windows screenshot capture uses Qt, and mouse clicking is implemented with macOS Quartz or Linux X11/XTest. Windows application is released at Microsoft Store: https://apps.microsoft.com/detail/9nr67kb8hr4d?hl=en-US&gl=US
 
 The app is built around a small test-book/action engine, so the bundled `SkipAd` workflow can be adjusted through text files and settings instead of recompiling the application.
 
@@ -30,14 +30,28 @@ OpenCvMatBitmapVisualizer/  Optional Visual Studio debugger visualizer
 
 ## Prerequisites
 
-- now Windows 10 or later
-- Visual Studio 2026 or newer with C++ desktop development tools
 - CMake 3.20+
-- Qt, tested with `C:/Qt/6.11.0/msvc2022_64`
-- vcpkg packages for OpenCV, Protobuf, and dependencies, tested with `x64-windows`
+- A C++23-capable compiler
+- Qt 6
+- OpenCV
 - Tesseract language data available at runtime if OCR is used
 
-The checked-in `CMakePresets.json` assumes these local paths:
+Platform-specific install commands are listed below.
+
+## Build
+
+### Windows
+
+Windows is the primary tested platform.
+
+Install:
+
+- Windows 10 or later
+- Visual Studio 2026 or newer with C++ desktop development tools
+- Qt, tested with `C:/Qt/6.11.0/msvc2022_64`
+- vcpkg packages for OpenCV, Protobuf, and dependencies, tested with `x64-windows`
+
+The checked-in Windows presets assume these local paths:
 
 ```text
 C:/Tools/vcpkg
@@ -46,8 +60,6 @@ C:/Qt/6.11.0/msvc2022_64
 ```
 
 Adjust `CMakePresets.json` if your machine uses different install locations.
-
-## Build
 
 From the repository root:
 
@@ -75,6 +87,95 @@ That produces:
 build/x64/Debug/SkipAdClicker.exe
 ```
 
+### Ubuntu
+
+Ubuntu support targets X11 or XWayland for global mouse automation. Native Wayland sessions may block screenshot and click automation by design.
+
+Install Qt, OpenCV, Tesseract, X11/XTest, and build tools:
+
+```bash
+bash scripts/ubuntu-install-deps.sh
+```
+
+The script runs:
+
+```bash
+sudo apt update
+sudo apt install -y \
+  build-essential \
+  cmake \
+  ninja-build \
+  pkg-config \
+  qt6-base-dev \
+  libopencv-dev \
+  libtesseract-dev \
+  libleptonica-dev \
+  tesseract-ocr \
+  tesseract-ocr-eng \
+  libx11-dev \
+  libxtst-dev
+```
+
+Verify Qt and OpenCV are visible:
+
+```bash
+qtpaths6 --version
+pkg-config --modversion opencv4
+```
+
+Build and run:
+
+```bash
+bash scripts/ubuntu-build.sh
+./out/build/ubuntu-release/bin/SkipAdClicker
+```
+
+Or run the commands directly:
+
+```bash
+cmake --preset ubuntu-release
+cmake --build --preset ubuntu-release --target SkipAdClicker
+./out/build/ubuntu-release/bin/SkipAdClicker
+```
+
+### macOS
+
+macOS requires Screen Recording permission for screenshots and Accessibility permission for mouse clicking.
+
+Install Homebrew packages:
+
+```bash
+brew install cmake ninja qt opencv tesseract
+```
+
+Verify Qt and OpenCV are visible:
+
+```bash
+qtpaths --version
+pkg-config --modversion opencv4
+```
+
+Build and run:
+
+```bash
+cmake -S . -B build-macos -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$(brew --prefix qt)"
+cmake --build build-macos --target SkipAdClicker
+./build-macos/bin/SkipAdClicker
+```
+
+If CMake cannot find OpenCV from Homebrew, add:
+
+```bash
+-DOpenCV_DIR="$(brew --prefix opencv)/lib/cmake/opencv4"
+```
+
+After first launch, enable permissions in:
+
+```text
+System Settings -> Privacy & Security -> Screen Recording
+System Settings -> Privacy & Security -> Accessibility
+```
+
 ## Configuration
 
 Runtime settings live in:
@@ -87,16 +188,16 @@ Important settings:
 
 ```ini
 [General]
-StartupFolder=.\SkipAd
+StartupFolder=./SkipAd
 TesseractEngineDataFolder=
 TesseractEngineLanguage=eng
 AllowOnlyOneInstance=true
-DebugImagesLocation=\\Temp\\Logs\\Images
+DebugImagesLocation=./Logs/Images
 
 [Logging]
 Enabled=true
 Level=Info
-File=\\Temp\\Logs\\SkipAdClicker.log
+File=./Logs/SkipAdClicker.log
 Console=false
 ```
 

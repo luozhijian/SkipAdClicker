@@ -1,11 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(AutomationTest LANGUAGES CXX)
 
-if(MSVC)
-    set(CMAKE_CXX_STANDARD 23)
-else()
-    set(CMAKE_CXX_STANDARD 26)
-endif()
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -13,11 +9,7 @@ option(AUTOMATIOTEST_BUILD_QT_APP "Build the Qt SkipAdClicker application when Q
 
 if(MSVC)
     add_compile_options(/std:c++latest /FS)
-else()
-    add_compile_options(-std=c++2c)
 endif()
-
-add_compile_definitions(AUTOMATIONTEST_ENABLE_CPP26_REFLECTION=1)
 
 add_subdirectory(Utilities)
 add_subdirectory(OpencvLib)

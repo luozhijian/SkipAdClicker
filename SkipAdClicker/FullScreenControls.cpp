@@ -1,9 +1,15 @@
 #include "FullScreenControls.hpp"
 
+#ifdef _WIN32
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
 #include <windows.h>
+#else
+#include <QGuiApplication>
+#include <QImage>
+#include <QScreen>
+#endif
 
 #include <algorithm>
 #include <cstddef>
@@ -14,6 +20,8 @@
 namespace automationtest::app {
 
 namespace {
+
+#ifdef _WIN32
 
 struct MonitorCapture {
     HDC memory_dc {nullptr};
@@ -203,10 +211,21 @@ BOOL CALLBACK CaptureMonitor(HMONITOR, HDC, LPRECT rect, LPARAM data)
     return TRUE;
 }
 
+#else
+
+std::shared_ptr<FullScreenControls::ScreenshotList>& PortableScreenshots()
+{
+    static auto screenshots = std::make_shared<FullScreenControls::ScreenshotList>();
+    return screenshots;
+}
+
+#endif
+
 } // namespace
 
 std::shared_ptr<FullScreenControls::ScreenshotList> FullScreenControls::TakeFullScreenshot()
 {
+#ifdef _WIN32
     auto& state = State();
     state.monitor_index = 0;
     EnumDisplayMonitors(nullptr, nullptr, CaptureMonitor, reinterpret_cast<LPARAM>(&state));
@@ -219,6 +238,32 @@ std::shared_ptr<FullScreenControls::ScreenshotList> FullScreenControls::TakeFull
     }
 
     return state.screenshots;
+#else
+    auto& screenshots = PortableScreenshots();
+    const auto screens = QGuiApplication::screens();
+    screenshots->resize(static_cast<std::size_t>(screens.size()));
+
+    for (int index = 0; index < screens.size(); ++index) {
+        const auto* screen = screens[index];
+        const auto geometry = screen->geometry();
+        const auto image = screen->grabWindow(0).toImage().convertToFormat(QImage::Format_RGBA8888);
+
+        auto& [bitmap, location] = (*screenshots)[static_cast<std::size_t>(index)];
+        bitmap.width = image.width();
+        bitmap.height = image.height();
+        bitmap.channels = 4;
+        bitmap.stride = image.bytesPerLine();
+
+        const auto byte_count = static_cast<std::size_t>(image.sizeInBytes());
+        if (bitmap.pixels.size() != byte_count) {
+            bitmap.pixels.resize(byte_count);
+        }
+        std::memcpy(bitmap.pixels.data(), image.constBits(), byte_count);
+        location = utilities::Point {geometry.x(), geometry.y()};
+    }
+
+    return screenshots;
+#endif
 }
 
 void FullScreenControls::RegisterBindings(utilities::status::LoadFunctions& load_functions)

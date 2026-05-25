@@ -28,6 +28,26 @@
         "OpenCV_DIR": "C:/Tools/vcpkg/installed/x64-windows/share/opencv4",
         "Protobuf_DIR": "C:/Tools/vcpkg/installed/x64-windows/share/protobuf"
       }
+    },
+    {
+      "name": "ubuntu-debug",
+      "displayName": "Ubuntu Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/ubuntu-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "AUTOMATIOTEST_BUILD_QT_APP": "ON"
+      }
+    },
+    {
+      "name": "ubuntu-release",
+      "displayName": "Ubuntu Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/ubuntu-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "AUTOMATIOTEST_BUILD_QT_APP": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -40,6 +60,14 @@
       "name": "x64-Release",
       "configurePreset": "x64-Release",
       "configuration": "Release"
+    },
+    {
+      "name": "ubuntu-debug",
+      "configurePreset": "ubuntu-debug"
+    },
+    {
+      "name": "ubuntu-release",
+      "configurePreset": "ubuntu-release"
     }
   ]
 }

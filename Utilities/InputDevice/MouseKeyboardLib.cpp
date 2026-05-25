@@ -21,6 +21,11 @@
 #ifdef SendMessage
 #undef SendMessage
 #endif
+#elif defined(__APPLE__)
+#include <ApplicationServices/ApplicationServices.h>
+#elif defined(__linux__)
+#include <X11/Xlib.h>
+#include <X11/extensions/XTest.h>
 #endif
 
 namespace automationtest::utilities {
@@ -128,6 +133,75 @@ void MouseHoverAndClickOnPoint2Internal(Point client_point, bool right_click)
 
 #endif
 
+#ifdef __APPLE__
+
+void PostMouseEvent(CGEventType type, Point point, CGMouseButton button)
+{
+    const CGPoint cg_point {static_cast<CGFloat>(point.x), static_cast<CGFloat>(point.y)};
+    CGEventRef event = CGEventCreateMouseEvent(nullptr, type, cg_point, button);
+    if (event == nullptr) {
+        throw std::runtime_error("CGEventCreateMouseEvent failed.");
+    }
+    CGEventPost(kCGHIDEventTap, event);
+    CFRelease(event);
+}
+
+void MouseClickMac(Point point, bool right_click)
+{
+    const auto button = right_click ? kCGMouseButtonRight : kCGMouseButtonLeft;
+    const auto down = right_click ? kCGEventRightMouseDown : kCGEventLeftMouseDown;
+    const auto up = right_click ? kCGEventRightMouseUp : kCGEventLeftMouseUp;
+    PostMouseEvent(kCGEventMouseMoved, point, button);
+    PostMouseEvent(down, point, button);
+    PostMouseEvent(up, point, button);
+}
+
+#endif
+
+#ifdef __linux__
+
+class XDisplay {
+public:
+    XDisplay()
+        : display_(XOpenDisplay(nullptr))
+    {
+        if (display_ == nullptr) {
+            throw std::runtime_error("Cannot open X11 display. On Linux, SkipAdClicker currently needs an X11 session or XWayland access.");
+        }
+    }
+
+    XDisplay(const XDisplay&) = delete;
+    XDisplay& operator=(const XDisplay&) = delete;
+
+    ~XDisplay()
+    {
+        if (display_ != nullptr) {
+            XCloseDisplay(display_);
+        }
+    }
+
+    [[nodiscard]] Display* get() const noexcept
+    {
+        return display_;
+    }
+
+private:
+    Display* display_ {};
+};
+
+void MouseClickX11(Point point, bool right_click)
+{
+    XDisplay display;
+    const int button = right_click ? 3 : 1;
+    const int screen = DefaultScreen(display.get());
+    XTestFakeMotionEvent(display.get(), screen, point.x, point.y, CurrentTime);
+    XTestFakeButtonEvent(display.get(), button, True, CurrentTime);
+    XTestFakeButtonEvent(display.get(), button, False, CurrentTime);
+    XFlush(display.get());
+}
+
+#endif
+
 void ThrowWindowsOnly(const char* function_name)
 {
     throw std::runtime_error(std::string(function_name) + " is only available on Windows.");
@@ -150,6 +224,12 @@ void MouseKeyboardLib::ClickOnPoint(NativeWindowHandle window_handle, Point clie
 #ifdef _WIN32
     (void)window_handle;
     MouseHoverAndClickOnPoint2Internal(client_point, false);
+#elif defined(__APPLE__)
+    (void)window_handle;
+    MouseClickMac(client_point, false);
+#elif defined(__linux__)
+    (void)window_handle;
+    MouseClickX11(client_point, false);
 #else
     (void)window_handle;
     (void)client_point;
@@ -181,6 +261,8 @@ void MouseKeyboardLib::MouseHoverAndClickOnPoint2(NativeWindowHandle window_hand
 #ifdef _WIN32
     (void)window_handle;
     MouseHoverAndClickOnPoint2Internal(client_point, false);
+#elif defined(__APPLE__) || defined(__linux__)
+    ClickOnPoint(window_handle, client_point);
 #else
     (void)window_handle;
     (void)client_point;
@@ -193,6 +275,12 @@ void MouseKeyboardLib::MouseHoverAndRightClickOnPoint(NativeWindowHandle window_
 #ifdef _WIN32
     (void)window_handle;
     MouseHoverAndClickOnPoint2Internal(client_point, true);
+#elif defined(__APPLE__)
+    (void)window_handle;
+    MouseClickMac(client_point, true);
+#elif defined(__linux__)
+    (void)window_handle;
+    MouseClickX11(client_point, true);
 #else
     (void)window_handle;
     (void)client_point;
@@ -389,6 +477,28 @@ Point MouseKeyboardLib::GetCursorPosition()
         throw std::runtime_error("GetCursorPos failed.");
     }
     return Point {point.x, point.y};
+#elif defined(__APPLE__)
+    CGEventRef event = CGEventCreate(nullptr);
+    if (event == nullptr) {
+        throw std::runtime_error("CGEventCreate failed.");
+    }
+    const CGPoint location = CGEventGetLocation(event);
+    CFRelease(event);
+    return Point {static_cast<int>(location.x), static_cast<int>(location.y)};
+#elif defined(__linux__)
+    XDisplay display;
+    Window root = DefaultRootWindow(display.get());
+    Window returned_root {};
+    Window returned_child {};
+    int root_x {};
+    int root_y {};
+    int window_x {};
+    int window_y {};
+    unsigned int mask {};
+    if (!XQueryPointer(display.get(), root, &returned_root, &returned_child, &root_x, &root_y, &window_x, &window_y, &mask)) {
+        throw std::runtime_error("XQueryPointer failed.");
+    }
+    return Point {root_x, root_y};
 #else
     ThrowWindowsOnly("GetCursorPosition");
 #endif
@@ -398,6 +508,13 @@ bool MouseKeyboardLib::SetCursorPosition(Point point)
 {
 #ifdef _WIN32
     return ::SetCursorPos(point.x, point.y) != FALSE;
+#elif defined(__APPLE__)
+    return CGWarpMouseCursorPosition(CGPoint {static_cast<CGFloat>(point.x), static_cast<CGFloat>(point.y)}) == kCGErrorSuccess;
+#elif defined(__linux__)
+    XDisplay display;
+    XWarpPointer(display.get(), None, DefaultRootWindow(display.get()), 0, 0, 0, 0, point.x, point.y);
+    XFlush(display.get());
+    return true;
 #else
     (void)point;
     return false;

@@ -59,7 +59,7 @@ void ConfigureLogging()
     utilities::LogSettings log_settings {};
     log_settings.enabled = settings.value("Enabled", true).toBool();
     log_settings.minimum_level = utilities::Logger::ParseLevel(settings.value("Level", "Info").toString().toStdString());
-    log_settings.file_path = ResolvePath(settings.value("File", ".\\Logs\\SkipAdClicker.log").toString());
+    log_settings.file_path = ResolvePath(settings.value("File", "./Logs/SkipAdClicker.log").toString());
     log_settings.write_to_console = settings.value("Console", false).toBool();
 
     settings.endGroup();
@@ -138,7 +138,7 @@ void StartUp::OpenOneFolder(const std::string& file_path, const std::function<bo
 
 std::optional<std::string> StartUp::StartupFolder()
 {
-    auto startup = ReadSetting("StartupFolder", ".\\SkipAd").toString().trimmed();
+    auto startup = ReadSetting("StartupFolder", "./SkipAd").toString().trimmed();
     if (startup.isEmpty()) {
         return std::nullopt;
     }
