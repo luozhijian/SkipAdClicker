@@ -18,13 +18,17 @@ struct TestBookActionParameterAttribute {
     }
 };
 
+} // namespace automationtest::utilities::attribute
+
+AUTOMATIONTEST_REFLECT_TYPE(::automationtest::utilities::attribute::TestBookActionParameterAttribute, "parameter_name")
+
+namespace automationtest::utilities::attribute {
+
 [[nodiscard]] constexpr auto ReflectTestBookActionParameterAttribute() noexcept
 {
     return ::automationtest::utilities::reflection::Reflect<TestBookActionParameterAttribute>();
 }
 
 } // namespace automationtest::utilities::attribute
-
-AUTOMATIONTEST_REFLECT_TYPE(::automationtest::utilities::attribute::TestBookActionParameterAttribute, "parameter_name")
 
 #endif // AUTOMATIOTEST_ATTRIBUTE_TESTBOOKACTIONPARAMETERATTRIBUTE_HPP

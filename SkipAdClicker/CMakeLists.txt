@@ -3,9 +3,17 @@
 find_package(Qt6 QUIET COMPONENTS Widgets)
 if(Qt6_FOUND)
     set(AUTOMATIOTEST_QT_WIDGETS_TARGET Qt6::Widgets)
+    find_package(Qt6 QUIET COMPONENTS DBus)
+    if(TARGET Qt6::DBus)
+        set(AUTOMATIOTEST_QT_DBUS_TARGET Qt6::DBus)
+    endif()
 else()
     find_package(Qt5 REQUIRED COMPONENTS Widgets)
     set(AUTOMATIOTEST_QT_WIDGETS_TARGET Qt5::Widgets)
+    find_package(Qt5 QUIET COMPONENTS DBus)
+    if(TARGET Qt5::DBus)
+        set(AUTOMATIOTEST_QT_DBUS_TARGET Qt5::DBus)
+    endif()
 endif()
 
 get_target_property(AUTOMATIOTEST_QMAKE_EXECUTABLE ${AUTOMATIOTEST_QT_WIDGETS_TARGET} INTERFACE_QMAKE_EXECUTABLE)
@@ -49,6 +57,11 @@ target_link_libraries(SkipAdClicker
         AutomatioTestTestBookLib
         AutomatioTestPlayTestBook
 )
+
+if(AUTOMATIOTEST_QT_DBUS_TARGET)
+    target_link_libraries(SkipAdClicker PRIVATE ${AUTOMATIOTEST_QT_DBUS_TARGET})
+    target_compile_definitions(SkipAdClicker PRIVATE AUTOMATIOTEST_HAS_QT_DBUS=1)
+endif()
 
 if(WIN32)
     target_link_libraries(SkipAdClicker PRIVATE user32 gdi32)

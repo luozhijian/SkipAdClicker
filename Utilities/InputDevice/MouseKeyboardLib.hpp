@@ -43,6 +43,7 @@ public:
 
     [[nodiscard]] static int CreateLParam(int low_word, int high_word) noexcept;
     static void ClickOnPoint(Point client_point);
+    static void ClickOnPointAndRestoreForegroundWindow(Point client_point);
     static void ClickOnPoint(NativeWindowHandle window_handle, Point client_point);
     static void MouseHoverAndClickOnPoint(NativeWindowHandle window_handle, Point client_point);
     static void MouseHoverAndClickOnPoint2(NativeWindowHandle window_handle, Point client_point);

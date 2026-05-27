@@ -8,13 +8,17 @@ namespace automationtest::utilities::attribute {
 struct TestBookActionClassAttribute {
 };
 
+} // namespace automationtest::utilities::attribute
+
+AUTOMATIONTEST_REFLECT_EMPTY_TYPE(::automationtest::utilities::attribute::TestBookActionClassAttribute)
+
+namespace automationtest::utilities::attribute {
+
 [[nodiscard]] constexpr auto ReflectTestBookActionClassAttribute() noexcept
 {
     return ::automationtest::utilities::reflection::Reflect<TestBookActionClassAttribute>();
 }
 
 } // namespace automationtest::utilities::attribute
-
-AUTOMATIONTEST_REFLECT_EMPTY_TYPE(::automationtest::utilities::attribute::TestBookActionClassAttribute)
 
 #endif // AUTOMATIOTEST_ATTRIBUTE_TESTBOOKACTIONCLASSATTRIBUTE_HPP

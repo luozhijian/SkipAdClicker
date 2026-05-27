@@ -4,6 +4,11 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
+#if defined(_WIN32)
+#include <cstring>
+#else
+#include <strings.h>
+#endif
 
 namespace automationtest::utilities {
 
@@ -13,8 +18,21 @@ std::tm ToLocalTm(std::chrono::system_clock::time_point value)
 {
     const std::time_t time = std::chrono::system_clock::to_time_t(value);
     std::tm local {};
+#if defined(_WIN32)
     localtime_s(&local, &time);
+#else
+    localtime_r(&time, &local);
+#endif
     return local;
+}
+
+int CompareIgnoreCase(const std::string& left, const std::string& right)
+{
+#if defined(_WIN32)
+    return _stricmp(left.c_str(), right.c_str());
+#else
+    return strcasecmp(left.c_str(), right.c_str());
+#endif
 }
 
 }
@@ -49,7 +67,7 @@ int DateTimeLib::ConvertToStringMonthToInt(const std::string& month)
         "July", "August", "September", "October", "November", "December"
     };
     for (std::size_t index = 0; index < months.size(); ++index) {
-        if (_stricmp(months[index].c_str(), month.c_str()) == 0) {
+        if (CompareIgnoreCase(months[index], month) == 0) {
             return static_cast<int>(index) + 1;
         }
     }

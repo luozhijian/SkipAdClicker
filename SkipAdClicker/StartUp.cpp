@@ -69,6 +69,24 @@ void ConfigureLogging()
     });
 }
 
+void ConfigureDebugSettings()
+{
+    auto settings = StartUp::AppSettings();
+    settings.beginGroup("Debug");
+
+    auto debug_view_images_location = settings.value("DebugViewImagesLocation").toString();
+    const auto tools_to_view_bitmap = settings.value("ToolsToViewBitmap").toString().trimmed().toStdString();
+
+    settings.endGroup();
+
+    if (debug_view_images_location.trimmed().isEmpty()) {
+        debug_view_images_location = ReadSetting("DebugImagesLocation").toString();
+    }
+
+    utilities::GlobalSetting::SetDebugViewImageFileFolder(ResolvePath(debug_view_images_location));
+    utilities::GlobalSetting::SetToolsToViewBitmap(tools_to_view_bitmap);
+}
+
 } // namespace
 
 void StartUp::InitializeApplication()
@@ -80,6 +98,7 @@ void StartUp::InitializeApplication()
     utilities::GlobalSetting::tesseract_engine_data_folder = ResolvePath(ReadSetting("TesseractEngineDataFolder").toString());
     utilities::GlobalSetting::tesseract_engine_language = ReadSetting("TesseractEngineLanguage", "eng").toString().toStdString();
     utilities::GlobalSetting::SetImageFileFolder(ResolvePath(ReadSetting("DebugImagesLocation").toString()));
+    ConfigureDebugSettings();
     RegisterDefaultActionBindings();
     utilities::Logger::Info("SkipAdClicker startup completed.", "StartUp");
     LogView::AddLog("SkipAdClicker startup completed.");

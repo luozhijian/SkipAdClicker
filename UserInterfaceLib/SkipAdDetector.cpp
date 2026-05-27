@@ -480,7 +480,7 @@ std::any SkipAdDetector::ClickOnSkipAd(const std::any& bitmaps, const std::any& 
     }
 
     const ClickOnlyCallback click = [](const Point& point) {
-        MouseKeyboardLib::ClickOnPoint(point);
+        MouseKeyboardLib::ClickOnPointAndRestoreForegroundWindow(point);
     };
     return ClickOnSkipAd(*bitmaps_pointer, click, setting);
 }
@@ -490,8 +490,23 @@ std::optional<Bitmap> SkipAdDetector::ClickOnSkipAd(const std::vector<LocatedBit
     if (!mouse_click) {
         return std::nullopt;
     }
+    if (bitmaps.empty()) {
+        Logger::LogToView("ClickOnSkipAd received no screenshots.");
+        return std::nullopt;
+    }
 
     for (const auto& [image, location] : bitmaps) {
+        if (image.width <= 0 || image.height <= 0 || image.pixels.empty()) {
+            Logger::LogToView(
+                "Skipping empty screenshot bitmap. width="
+                + std::to_string(image.width)
+                + ", height="
+                + std::to_string(image.height)
+                + ", pixels="
+                + std::to_string(image.pixels.size()));
+            continue;
+        }
+
         const auto gray = BitmapRegionToGrayMat(image, Rectangle {0, 0, image.width, image.height});
         const auto triangle = FindFirstSkipAdInGray(gray, line_detection);
         if (!triangle.has_value()) {

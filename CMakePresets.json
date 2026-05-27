@@ -4,6 +4,11 @@
     {
       "name": "x64-Debug",
       "displayName": "x64 Debug",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/out/build/x64-Debug",
       "cacheVariables": {
@@ -18,6 +23,11 @@
     {
       "name": "x64-Release",
       "displayName": "x64 Release",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/out/build/x64-Release",
       "cacheVariables": {
@@ -32,6 +42,11 @@
     {
       "name": "ubuntu-debug",
       "displayName": "Ubuntu Debug",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/out/build/ubuntu-debug",
       "cacheVariables": {
@@ -42,6 +57,11 @@
     {
       "name": "ubuntu-release",
       "displayName": "Ubuntu Release",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/out/build/ubuntu-release",
       "cacheVariables": {
@@ -53,20 +73,40 @@
   "buildPresets": [
     {
       "name": "x64-Debug",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
       "configurePreset": "x64-Debug",
       "configuration": "Debug"
     },
     {
       "name": "x64-Release",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
       "configurePreset": "x64-Release",
       "configuration": "Release"
     },
     {
       "name": "ubuntu-debug",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
       "configurePreset": "ubuntu-debug"
     },
     {
       "name": "ubuntu-release",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
       "configurePreset": "ubuntu-release"
     }
   ]

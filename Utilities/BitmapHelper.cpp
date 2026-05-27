@@ -215,16 +215,30 @@ std::string BitmapHelper::DebugSave(const Bitmap& bitmap, const std::string& fil
 
     std::filesystem::path output_path(GlobalSetting::ImageFileFolder());
     output_path /= filename;
-    output_path.replace_extension(".bmp");
+    return SaveBitmapFile(bitmap, output_path.string());
+}
 
-    if (const auto parent_path = output_path.parent_path(); !parent_path.empty()) {
-        std::filesystem::create_directories(parent_path);
-    }
-
-    if (!WriteBitmapFile(bitmap, output_path)) {
+std::string BitmapHelper::SaveBitmapFile(const Bitmap& bitmap, const std::string& filename)
+{
+    if (filename.empty()) {
         return {};
     }
-    return output_path.string();
+
+    try {
+        std::filesystem::path output_path(filename);
+        output_path.replace_extension(".bmp");
+
+        if (const auto parent_path = output_path.parent_path(); !parent_path.empty()) {
+            std::filesystem::create_directories(parent_path);
+        }
+
+        if (!WriteBitmapFile(bitmap, output_path)) {
+            return {};
+        }
+        return output_path.string();
+    } catch (...) {
+        return {};
+    }
 }
 
 

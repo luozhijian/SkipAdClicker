@@ -27,10 +27,17 @@ public:
     static bool ClearStopTest() noexcept;
     static std::string ImageFileFolder();
     static void SetImageFileFolder(const std::string& folder);
+    static std::string DebugViewImageFileFolder();
+    static void SetDebugViewImageFileFolder(const std::string& folder);
+    static std::string ToolsToViewBitmap();
+    static void SetToolsToViewBitmap(const std::string& tool);
 
 private:
     static inline std::string image_file_folder_ {};
     static inline std::string real_image_file_folder_ {};
+    static inline std::string debug_view_image_file_folder_ {};
+    static inline std::string real_debug_view_image_file_folder_ {};
+    static inline std::string tools_to_view_bitmap_ {};
 };
 
 } // namespace automationtest::utilities

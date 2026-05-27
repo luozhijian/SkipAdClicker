@@ -88,6 +88,51 @@ INPUT MakeKeyboardInput(WORD virtual_key, WORD scan_code, DWORD flags)
     return input;
 }
 
+void RestoreForegroundWindow(HWND window)
+{
+    if (window == nullptr || !::IsWindow(window) || window == ::GetForegroundWindow()) {
+        return;
+    }
+
+    const HWND current_window = ::GetForegroundWindow();
+    const DWORD current_thread = current_window != nullptr ? ::GetWindowThreadProcessId(current_window, nullptr) : 0;
+    const DWORD target_thread = ::GetWindowThreadProcessId(window, nullptr);
+    const DWORD this_thread = ::GetCurrentThreadId();
+
+    const bool attached_current = current_thread != 0 && current_thread != this_thread
+        && ::AttachThreadInput(this_thread, current_thread, TRUE) != FALSE;
+    const bool attached_target = target_thread != 0 && target_thread != this_thread && target_thread != current_thread
+        && ::AttachThreadInput(this_thread, target_thread, TRUE) != FALSE;
+
+    if (::IsIconic(window)) {
+        (void)::ShowWindow(window, SW_RESTORE);
+    }
+    (void)::SetForegroundWindow(window);
+
+    if (attached_target) {
+        (void)::AttachThreadInput(this_thread, target_thread, FALSE);
+    }
+    if (attached_current) {
+        (void)::AttachThreadInput(this_thread, current_thread, FALSE);
+    }
+}
+
+class ForegroundWindowRestorer {
+public:
+    explicit ForegroundWindowRestorer(bool enabled)
+        : window_(enabled ? ::GetForegroundWindow() : nullptr)
+    {
+    }
+
+    void Restore() const
+    {
+        RestoreForegroundWindow(window_);
+    }
+
+private:
+    HWND window_ {nullptr};
+};
+
 void SendInputs(const std::vector<INPUT>& inputs)
 {
     if (inputs.empty()) {
@@ -113,8 +158,9 @@ void SendUnicodeChar(wchar_t character)
     SendInputs({down, up});
 }
 
-void MouseHoverAndClickOnPoint2Internal(Point client_point, bool right_click)
+void MouseHoverAndClickOnPoint2Internal(Point client_point, bool right_click, bool restore_foreground_after_click = false)
 {
+    const ForegroundWindowRestorer foreground_window(restore_foreground_after_click);
     const int screen_width = ::GetSystemMetrics(SmCxScreen);
     const int screen_height = ::GetSystemMetrics(SmCyScreen);
     const int x = NormalizeAbsoluteCoordinate(client_point.x, screen_width);
@@ -128,6 +174,7 @@ void MouseHoverAndClickOnPoint2Internal(Point client_point, bool right_click)
         MakeMouseInput(x, y, down_flag),
         MakeMouseInput(x, y, up_flag)
     });
+    foreground_window.Restore();
     SleepMilliseconds(500);
 }
 
@@ -189,14 +236,145 @@ private:
     Display* display_ {};
 };
 
-void MouseClickX11(Point point, bool right_click)
+struct XFocusSnapshot {
+    Window input_focus {None};
+    Window activation_window {None};
+    int revert_to {RevertToParent};
+    bool valid {false};
+};
+
+bool HasWindowProperty(Display* display, Window window, Atom property)
+{
+    if (property == None) {
+        return false;
+    }
+
+    Atom actual_type {};
+    int actual_format {};
+    unsigned long item_count {};
+    unsigned long bytes_after {};
+    unsigned char* property_data {};
+    const int status = XGetWindowProperty(
+        display,
+        window,
+        property,
+        0,
+        0,
+        False,
+        AnyPropertyType,
+        &actual_type,
+        &actual_format,
+        &item_count,
+        &bytes_after,
+        &property_data);
+    if (property_data != nullptr) {
+        XFree(property_data);
+    }
+    return status == Success && actual_type != None;
+}
+
+Window GetActivationWindow(Display* display, Window window)
+{
+    if (display == nullptr || window == None || window == PointerRoot) {
+        return None;
+    }
+
+    const Window root = DefaultRootWindow(display);
+    const Atom wm_state = XInternAtom(display, "WM_STATE", True);
+    Window current = window;
+    while (current != None && current != root) {
+        if (HasWindowProperty(display, current, wm_state)) {
+            return current;
+        }
+
+        Window returned_root {};
+        Window parent {};
+        Window* children {};
+        unsigned int child_count {};
+        if (XQueryTree(display, current, &returned_root, &parent, &children, &child_count) == 0) {
+            return current;
+        }
+        if (children != nullptr) {
+            XFree(children);
+        }
+        if (parent == None || parent == root) {
+            return current;
+        }
+        current = parent;
+    }
+
+    return None;
+}
+
+XFocusSnapshot CaptureXFocus(Display* display)
+{
+    XFocusSnapshot snapshot {};
+    XGetInputFocus(display, &snapshot.input_focus, &snapshot.revert_to);
+    if (snapshot.input_focus == None || snapshot.input_focus == PointerRoot) {
+        return snapshot;
+    }
+
+    snapshot.activation_window = GetActivationWindow(display, snapshot.input_focus);
+    snapshot.valid = true;
+    return snapshot;
+}
+
+void RequestXActiveWindow(Display* display, Window window)
+{
+    if (display == nullptr || window == None) {
+        return;
+    }
+
+    const Atom active_window = XInternAtom(display, "_NET_ACTIVE_WINDOW", False);
+    if (active_window == None) {
+        return;
+    }
+
+    XEvent event {};
+    event.xclient.type = ClientMessage;
+    event.xclient.window = window;
+    event.xclient.message_type = active_window;
+    event.xclient.format = 32;
+    event.xclient.data.l[0] = 1;
+    event.xclient.data.l[1] = CurrentTime;
+    event.xclient.data.l[2] = None;
+
+    XSendEvent(
+        display,
+        DefaultRootWindow(display),
+        False,
+        SubstructureRedirectMask | SubstructureNotifyMask,
+        &event);
+}
+
+void RestoreXFocus(Display* display, const XFocusSnapshot& snapshot)
+{
+    if (display == nullptr || !snapshot.valid) {
+        return;
+    }
+
+    if (snapshot.activation_window != None) {
+        RequestXActiveWindow(display, snapshot.activation_window);
+    }
+    XSetInputFocus(display, snapshot.input_focus, snapshot.revert_to, CurrentTime);
+    XFlush(display);
+}
+
+void MouseClickX11(Point point, bool right_click, bool restore_focus_after_click = false)
 {
     XDisplay display;
+    const auto saved_focus = restore_focus_after_click ? CaptureXFocus(display.get()) : XFocusSnapshot {};
     const int button = right_click ? 3 : 1;
     const int screen = DefaultScreen(display.get());
     XTestFakeMotionEvent(display.get(), screen, point.x, point.y, CurrentTime);
     XTestFakeButtonEvent(display.get(), button, True, CurrentTime);
     XTestFakeButtonEvent(display.get(), button, False, CurrentTime);
+    if (restore_focus_after_click) {
+        XSync(display.get(), False);
+        SleepMilliseconds(100);
+        RestoreXFocus(display.get(), saved_focus);
+        return;
+    }
     XFlush(display.get());
 }
 
@@ -217,6 +395,17 @@ int MouseKeyboardLib::CreateLParam(int low_word, int high_word) noexcept
 void MouseKeyboardLib::ClickOnPoint(Point client_point)
 {
     ClickOnPoint(nullptr, client_point);
+}
+
+void MouseKeyboardLib::ClickOnPointAndRestoreForegroundWindow(Point client_point)
+{
+#ifdef _WIN32
+    MouseHoverAndClickOnPoint2Internal(client_point, false, true);
+#elif defined(__linux__)
+    MouseClickX11(client_point, false, true);
+#else
+    ClickOnPoint(client_point);
+#endif
 }
 
 void MouseKeyboardLib::ClickOnPoint(NativeWindowHandle window_handle, Point client_point)

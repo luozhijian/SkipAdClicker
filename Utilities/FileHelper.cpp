@@ -1,5 +1,7 @@
 #include "FileHelper.hpp"
 
+#include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <sstream>

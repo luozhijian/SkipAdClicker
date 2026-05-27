@@ -48,4 +48,9 @@ public:
 
 } // namespace automationtest::opencvlib
 
+using Bitmap = automationtest::utilities::Bitmap;
+
+void DM(cv::Mat& mat);
+void DB(const Bitmap& bp);
+
 #endif // AUTOMATIOTEST_OPENCVLIB_OPENCVLIB_HPP

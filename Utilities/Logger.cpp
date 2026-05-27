@@ -42,7 +42,11 @@ std::string Timestamp()
     const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
     const std::time_t time = std::chrono::system_clock::to_time_t(now);
     std::tm local {};
+#if defined(_WIN32)
     localtime_s(&local, &time);
+#else
+    localtime_r(&time, &local);
+#endif
 
     std::ostringstream stream;
     stream << std::put_time(&local, "%Y-%m-%d %H:%M:%S") << '.' << std::setfill('0') << std::setw(3) << milliseconds.count();

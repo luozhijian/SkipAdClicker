@@ -20,14 +20,12 @@ union ShortLine {
         std::int32_t p1;
         std::int32_t p2;
     };
-    struct {
-        ShortPoint point1;
-        ShortPoint point2;
-    };
 
     ShortLine() noexcept;
     ShortLine(ShortPoint start, ShortPoint end) noexcept;
 
+    [[nodiscard]] ShortPoint Point1() const noexcept;
+    [[nodiscard]] ShortPoint Point2() const noexcept;
     [[nodiscard]] std::tuple<std::int16_t, std::int16_t, std::int16_t, std::int16_t> ToShortXY() const noexcept;
     [[nodiscard]] std::pair<ShortPoint, ShortPoint> ToShortPoints() const noexcept;
     [[nodiscard]] std::int16_t MinX() const noexcept;

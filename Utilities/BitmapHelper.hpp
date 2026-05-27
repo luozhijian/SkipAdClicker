@@ -17,6 +17,7 @@ public:
     static std::string InfoSave(const Bitmap& bitmap);
     static std::string DebugSave(const Bitmap& bitmap);
     static std::string DebugSave(const Bitmap& bitmap, const std::string& filename);
+    static std::string SaveBitmapFile(const Bitmap& bitmap, const std::string& filename);
     static Bitmap CopyBitmap(const Bitmap& bitmap, const std::optional<Rectangle>& rectangle, Point& top_left);
     static Bitmap GetBitmap(const Bitmap& bitmap, Rectangle rectangle);
 };

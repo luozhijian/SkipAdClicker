@@ -41,10 +41,13 @@ add_library(AutomatioTestOcrLib
 
 target_include_directories(AutomatioTestOcrLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(AutomatioTestOcrLib PUBLIC AutomatioTestUtilities AutomationTestOpencvLib)
-target_compile_definitions(AutomatioTestOcrLib PRIVATE AUTOMATIOTEST_HAS_TESSERACT=0)
+
+set(AUTOMATIOTEST_HAS_TESSERACT 0)
 
 if(AUTOMATIOTEST_ENABLE_TESSERACT AND AUTOMATIOTEST_TESSERACT_INCLUDE_DIR AND AUTOMATIOTEST_TESSERACT_LIBRARY AND AUTOMATIOTEST_LEPTONICA_LIBRARY)
     target_include_directories(AutomatioTestOcrLib PRIVATE ${AUTOMATIOTEST_TESSERACT_INCLUDE_DIR})
     target_link_libraries(AutomatioTestOcrLib PRIVATE ${AUTOMATIOTEST_TESSERACT_LIBRARY} ${AUTOMATIOTEST_LEPTONICA_LIBRARY})
-    target_compile_definitions(AutomatioTestOcrLib PRIVATE AUTOMATIOTEST_HAS_TESSERACT=1)
+    set(AUTOMATIOTEST_HAS_TESSERACT 1)
 endif()
+
+target_compile_definitions(AutomatioTestOcrLib PRIVATE AUTOMATIOTEST_HAS_TESSERACT=${AUTOMATIOTEST_HAS_TESSERACT})

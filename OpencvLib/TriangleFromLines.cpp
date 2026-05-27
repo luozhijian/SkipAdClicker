@@ -21,7 +21,7 @@ namespace {
 
 bool PointNearSegment(const ShortPoint& point, const ShortLine& segment, short max_gap)
 {
-    const auto [min_x, max_x, min_y, max_y] = PointHelper::GetMinMax(segment.point1, segment.point2);
+    const auto [min_x, max_x, min_y, max_y] = PointHelper::GetMinMax(segment.Point1(), segment.Point2());
     return MathLib::Between(point.x, min_x - max_gap, max_x + max_gap)
         && MathLib::Between(point.y, min_y - max_gap, max_y + max_gap);
 }

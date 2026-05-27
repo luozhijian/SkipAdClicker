@@ -18,13 +18,17 @@ struct TestBookSettingAttribute {
     }
 };
 
+} // namespace automationtest::utilities::attribute
+
+AUTOMATIONTEST_REFLECT_TYPE(::automationtest::utilities::attribute::TestBookSettingAttribute, "setting_name")
+
+namespace automationtest::utilities::attribute {
+
 [[nodiscard]] constexpr auto ReflectTestBookSettingAttribute() noexcept
 {
     return ::automationtest::utilities::reflection::Reflect<TestBookSettingAttribute>();
 }
 
 } // namespace automationtest::utilities::attribute
-
-AUTOMATIONTEST_REFLECT_TYPE(::automationtest::utilities::attribute::TestBookSettingAttribute, "setting_name")
 
 #endif // AUTOMATIOTEST_ATTRIBUTE_TESTBOOKSETTINGATTRIBUTE_HPP

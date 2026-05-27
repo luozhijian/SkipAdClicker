@@ -7,6 +7,7 @@
 #include "SmallTriangleDetector.hpp"
 
 #include "../Utilities/MathLib.hpp"
+#include "../Utilities/BitmapHelper.hpp"
 #include "../Utilities/Logger.hpp"
 #include "../Utilities/GlobalSetting.hpp"
 #include "../Utilities/IdGenerator.hpp"
@@ -14,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cctype>
+#include <cstdlib>
 #include <exception>
 #include <filesystem>
 #include <limits>
@@ -616,3 +618,106 @@ cv::Mat OpenCvLib::FilterMatByColor(const cv::Mat& gray, int color, int delta)
 }
 
 } // namespace automationtest::opencvlib
+
+namespace {
+
+#if defined(_WIN32)
+std::string ShellQuote(const std::string& value)
+{
+    std::string result {"\""};
+    for (const char ch : value) {
+        if (ch == '"') {
+            result += "\\\"";
+        } else {
+            result += ch;
+        }
+    }
+    result += '"';
+    return result;
+}
+#else
+std::string ShellQuote(const std::string& value)
+{
+    std::string result {"'"};
+    for (const char ch : value) {
+        if (ch == '\'') {
+            result += "'\\''";
+        } else {
+            result += ch;
+        }
+    }
+    result += '\'';
+    return result;
+}
+#endif
+
+std::filesystem::path DebugImageFilePath(const std::string& prefix)
+{
+    std::filesystem::path folder(automationtest::utilities::GlobalSetting::DebugViewImageFileFolder());
+    if (folder.empty()) {
+        folder = std::filesystem::current_path();
+    }
+    return folder / (prefix + "_" + automationtest::utilities::IdGenerator::IdWithDateTime() + ".bmp");
+}
+
+void StartBitmapViewer(const std::string& filename, const std::string& log_category)
+{
+    const auto tool = automationtest::utilities::GlobalSetting::ToolsToViewBitmap();
+    std::string command;
+
+#if defined(_WIN32)
+    if (tool.empty()) {
+        command = "start \"\" " + ShellQuote(filename);
+    } else {
+        command = "start \"\" " + ShellQuote(tool) + " " + ShellQuote(filename);
+    }
+#elif defined(__APPLE__)
+    if (tool.empty()) {
+        command = "open " + ShellQuote(filename) + " >/dev/null 2>&1 &";
+    } else {
+        command = ShellQuote(tool) + " " + ShellQuote(filename) + " >/dev/null 2>&1 &";
+    }
+#else
+    if (tool.empty()) {
+        command = "xdg-open " + ShellQuote(filename) + " >/dev/null 2>&1 &";
+    } else {
+        command = ShellQuote(tool) + " " + ShellQuote(filename) + " >/dev/null 2>&1 &";
+    }
+#endif
+
+    const int result = std::system(command.c_str());
+    if (result != 0) {
+        automationtest::utilities::Logger::Error("Failed to start bitmap viewer for " + filename, log_category);
+    }
+}
+
+} // namespace
+
+void DM(cv::Mat& mat)
+{
+    if (mat.empty()) {
+        automationtest::utilities::Logger::Error("Cannot display an empty cv::Mat.", "DM");
+        return;
+    }
+
+    const auto filename = DebugImageFilePath("DM").string();
+    const auto saved_file = automationtest::opencvlib::OpenCvLib::SaveMatAsBitmapFile(mat, filename);
+    if (saved_file.empty()) {
+        automationtest::utilities::Logger::Error("Failed to save debug cv::Mat bitmap.", "DM");
+        return;
+    }
+
+    StartBitmapViewer(saved_file, "DM");
+}
+
+void DB(const Bitmap& bp)
+{
+    const auto filename = DebugImageFilePath("DB").string();
+    const auto saved_file = automationtest::utilities::BitmapHelper::SaveBitmapFile(bp, filename);
+    if (saved_file.empty()) {
+        automationtest::utilities::Logger::Error("Failed to save debug Bitmap.", "DB");
+        return;
+    }
+
+    StartBitmapViewer(saved_file, "DB");
+}

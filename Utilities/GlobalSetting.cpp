@@ -43,4 +43,39 @@ void GlobalSetting::SetImageFileFolder(const std::string& folder)
     real_image_file_folder_.clear();
 }
 
+std::string GlobalSetting::DebugViewImageFileFolder()
+{
+    if (debug_view_image_file_folder_.empty()) {
+        return ImageFileFolder();
+    }
+    if (!real_debug_view_image_file_folder_.empty()) {
+        return real_debug_view_image_file_folder_;
+    }
+
+    try {
+        const auto target = std::filesystem::path(debug_view_image_file_folder_) / DateTimeLib::GetCurrentDateTime_yyyyMMdd_HHmmss();
+        FilePathLib::CreateFolderIfNotExists(target.string());
+        real_debug_view_image_file_folder_ = target.string();
+    } catch (...) {
+        real_debug_view_image_file_folder_.clear();
+    }
+    return real_debug_view_image_file_folder_;
+}
+
+void GlobalSetting::SetDebugViewImageFileFolder(const std::string& folder)
+{
+    debug_view_image_file_folder_ = folder;
+    real_debug_view_image_file_folder_.clear();
+}
+
+std::string GlobalSetting::ToolsToViewBitmap()
+{
+    return tools_to_view_bitmap_;
+}
+
+void GlobalSetting::SetToolsToViewBitmap(const std::string& tool)
+{
+    tools_to_view_bitmap_ = tool;
+}
+
 } // namespace automationtest::utilities

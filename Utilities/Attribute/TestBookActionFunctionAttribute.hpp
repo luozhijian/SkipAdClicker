@@ -18,13 +18,17 @@ struct TestBookActionFunctionAttribute {
     }
 };
 
+} // namespace automationtest::utilities::attribute
+
+AUTOMATIONTEST_REFLECT_TYPE(::automationtest::utilities::attribute::TestBookActionFunctionAttribute, "function_name")
+
+namespace automationtest::utilities::attribute {
+
 [[nodiscard]] constexpr auto ReflectTestBookActionFunctionAttribute() noexcept
 {
     return ::automationtest::utilities::reflection::Reflect<TestBookActionFunctionAttribute>();
 }
 
 } // namespace automationtest::utilities::attribute
-
-AUTOMATIONTEST_REFLECT_TYPE(::automationtest::utilities::attribute::TestBookActionFunctionAttribute, "function_name")
 
 #endif // AUTOMATIOTEST_ATTRIBUTE_TESTBOOKACTIONFUNCTIONATTRIBUTE_HPP

@@ -10,9 +10,20 @@ ShortLine::ShortLine() noexcept
 }
 
 ShortLine::ShortLine(ShortPoint start, ShortPoint end) noexcept
-    : point1(start)
-    , point2(end)
+    : long_value(0)
 {
+    p1 = start.packed_value;
+    p2 = end.packed_value;
+}
+
+ShortPoint ShortLine::Point1() const noexcept
+{
+    return ShortPoint(x1, y1);
+}
+
+ShortPoint ShortLine::Point2() const noexcept
+{
+    return ShortPoint(x2, y2);
 }
 
 std::tuple<std::int16_t, std::int16_t, std::int16_t, std::int16_t> ShortLine::ToShortXY() const noexcept
@@ -22,7 +33,7 @@ std::tuple<std::int16_t, std::int16_t, std::int16_t, std::int16_t> ShortLine::To
 
 std::pair<ShortPoint, ShortPoint> ShortLine::ToShortPoints() const noexcept
 {
-    return {point1, point2};
+    return {Point1(), Point2()};
 }
 
 std::int16_t ShortLine::MinX() const noexcept
