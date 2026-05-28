@@ -204,9 +204,10 @@ utilities::Bitmap ApplicationService::SimulateMouseClick(utilities::Point point,
     playtestbook::services::RecentActivityService::Instance().PushLocation(point);
     if (auto* target = qApp->activeWindow()) {
         const QPoint local(point.x, point.y);
-        QCursor::setPos(target->mapToGlobal(local));
-        QMouseEvent press(QEvent::MouseButtonPress, local, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
-        QMouseEvent release(QEvent::MouseButtonRelease, local, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+        const QPoint global = target->mapToGlobal(local);
+        QCursor::setPos(global);
+        QMouseEvent press(QEvent::MouseButtonPress, local, global, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+        QMouseEvent release(QEvent::MouseButtonRelease, local, global, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
         QApplication::sendEvent(target, &press);
         QApplication::sendEvent(target, &release);
     }
@@ -219,9 +220,10 @@ utilities::Bitmap ApplicationService::SimulateMouseRightClick(utilities::Point p
     playtestbook::services::RecentActivityService::Instance().PushLocation(point);
     if (auto* target = qApp->activeWindow()) {
         const QPoint local(point.x, point.y);
-        QCursor::setPos(target->mapToGlobal(local));
-        QMouseEvent press(QEvent::MouseButtonPress, local, Qt::RightButton, Qt::RightButton, Qt::NoModifier);
-        QMouseEvent release(QEvent::MouseButtonRelease, local, Qt::RightButton, Qt::NoButton, Qt::NoModifier);
+        const QPoint global = target->mapToGlobal(local);
+        QCursor::setPos(global);
+        QMouseEvent press(QEvent::MouseButtonPress, local, global, Qt::RightButton, Qt::RightButton, Qt::NoModifier);
+        QMouseEvent release(QEvent::MouseButtonRelease, local, global, Qt::RightButton, Qt::NoButton, Qt::NoModifier);
         QApplication::sendEvent(target, &press);
         QApplication::sendEvent(target, &release);
     }
@@ -249,8 +251,9 @@ utilities::Bitmap ApplicationService::SimulateMouseHoverOnePoint(utilities::Poin
 {
     if (auto* target = qApp->activeWindow()) {
         const QPoint local(point.x, point.y);
-        QCursor::setPos(target->mapToGlobal(local));
-        QMouseEvent move(QEvent::MouseMove, local, Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+        const QPoint global = target->mapToGlobal(local);
+        QCursor::setPos(global);
+        QMouseEvent move(QEvent::MouseMove, local, global, Qt::NoButton, Qt::NoButton, Qt::NoModifier);
         QApplication::sendEvent(target, &move);
     }
     Wait(milliseconds_to_wait);
