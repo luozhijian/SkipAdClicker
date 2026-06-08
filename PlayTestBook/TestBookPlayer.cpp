@@ -69,6 +69,7 @@ const std::shared_ptr<testbooklib::TestBook>& TestBookPlayer::Book() const noexc
 
 void TestBookPlayer::CheckIsCancelled() const
 {
+    utilities::GlobalSetting::WaitForScreenUnlockIfBlocked();
     if (utilities::GlobalSetting::is_stop_test_requested) {
         throw TestCancellingException();
     }

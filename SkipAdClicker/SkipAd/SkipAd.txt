@@ -2,11 +2,12 @@
 #relative path is relative to this folder
 
 $Endlessloop=StoreTrue 
-$SecondsDelay=StoreValue 0.5
+$SecondsDelay=StoreValue 1.0
+$LoopTotalSeconds=StoreValue -1 
+$StopAtCountOfError=StoreValue 30
 
-WhileLoop $Endlessloop $SecondsDelay   
+WhileLoop $Endlessloop $SecondsDelay $LoopTotalSeconds OnErrorCountContinuousErrorStopAtMax  $StopAtCountOfError
 
-#	FindCurrentChrome youtube.com
 	$screens=TakeFullScreenshot
 	ClickOnSkipAd $screens Special_SettingLineDetectionSkipAd
 	

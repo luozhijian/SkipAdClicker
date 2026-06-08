@@ -5,9 +5,12 @@
 #include "../../Utilities/Exceptions/TestContinueException.hpp"
 #include "../../Utilities/Exceptions/TestException.hpp"
 #include "../../Utilities/Types/EnumOnExcpetionAction.hpp"
+#include "../../Utilities/ExceptionLib.hpp"
+#include "../../Utilities/Logger.hpp"
 
 #include <any>
 #include <thread>
+#include <format>
 
 namespace automationtest::testbooklib::flowcontrols {
 
@@ -146,7 +149,9 @@ void WhileLoop::PlayActions(const ActionRunner& runner)
                             || on_exception_action == EnumOnExcpetionAction::OnErrorCountContinuousErrorStopAtMax) {
                             ++current_error_count_;
                             if (max_error_count_.has_value() && current_error_count_ >= max_error_count_.value()) {
-                                throw TestBreakException();
+                                std::string message = std::format("Max Error {0} reached: {1}", max_error_count_.value(), automationtest::utilities::ExceptionLib::exception_to_string());
+                                automationtest::utilities::Logger::LogToView(message);
+                                throw TestBreakException(message);
                             }
                             continue;
                         }

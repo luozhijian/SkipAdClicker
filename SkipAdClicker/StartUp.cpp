@@ -25,11 +25,15 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QString>
 
 namespace automationtest::app {
 
 namespace {
+
+constexpr auto kMinimizedWhenStartedSetting = "MinimizedWhenStarted";
+constexpr auto kAutoStartPromptShownSetting = "AutoStartPromptShown";
 
 std::string ResolvePath(const QString& value)
 {
@@ -41,6 +45,44 @@ std::string ResolvePath(const QString& value)
         return info.absoluteFilePath().toStdString();
     }
     return QDir(QCoreApplication::applicationDirPath()).absoluteFilePath(value).toStdString();
+}
+
+bool IsSnapEnvironment()
+{
+    return !qEnvironmentVariable("SNAP").trimmed().isEmpty();
+}
+
+QString SnapWritableDirectory()
+{
+    auto path = qEnvironmentVariable("SNAP_USER_COMMON").trimmed();
+    if (path.isEmpty()) {
+        path = qEnvironmentVariable("SNAP_USER_DATA").trimmed();
+    }
+    if (path.isEmpty()) {
+        path = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    }
+    if (path.isEmpty()) {
+        path = QDir::home().absoluteFilePath(".skipadclicker");
+    }
+
+    QDir directory(path);
+    directory.mkpath(".");
+    return directory.absolutePath();
+}
+
+std::string ResolveWritablePath(const QString& value)
+{
+    if (value.isEmpty()) {
+        return {};
+    }
+
+    QFileInfo info(value);
+    if (info.isAbsolute()) {
+        return info.absoluteFilePath().toStdString();
+    }
+
+    const auto base_path = IsSnapEnvironment() ? SnapWritableDirectory() : QCoreApplication::applicationDirPath();
+    return QDir(base_path).absoluteFilePath(value).toStdString();
 }
 
 QVariant ReadSetting(const QString& key, const QVariant& default_value = {})
@@ -59,7 +101,7 @@ void ConfigureLogging()
     utilities::LogSettings log_settings {};
     log_settings.enabled = settings.value("Enabled", true).toBool();
     log_settings.minimum_level = utilities::Logger::ParseLevel(settings.value("Level", "Info").toString().toStdString());
-    log_settings.file_path = ResolvePath(settings.value("File", "./Logs/SkipAdClicker.log").toString());
+    log_settings.file_path = ResolveWritablePath(settings.value("File", "./Logs/SkipAdClicker.log").toString());
     log_settings.write_to_console = settings.value("Console", false).toBool();
 
     settings.endGroup();
@@ -83,7 +125,7 @@ void ConfigureDebugSettings()
         debug_view_images_location = ReadSetting("DebugImagesLocation").toString();
     }
 
-    utilities::GlobalSetting::SetDebugViewImageFileFolder(ResolvePath(debug_view_images_location));
+    utilities::GlobalSetting::SetDebugViewImageFileFolder(ResolveWritablePath(debug_view_images_location));
     utilities::GlobalSetting::SetToolsToViewBitmap(tools_to_view_bitmap);
 }
 
@@ -97,7 +139,7 @@ void StartUp::InitializeApplication()
     ConfigureLogging();
     utilities::GlobalSetting::tesseract_engine_data_folder = ResolvePath(ReadSetting("TesseractEngineDataFolder").toString());
     utilities::GlobalSetting::tesseract_engine_language = ReadSetting("TesseractEngineLanguage", "eng").toString().toStdString();
-    utilities::GlobalSetting::SetImageFileFolder(ResolvePath(ReadSetting("DebugImagesLocation").toString()));
+    utilities::GlobalSetting::SetImageFileFolder(ResolveWritablePath(ReadSetting("DebugImagesLocation").toString()));
     ConfigureDebugSettings();
     RegisterDefaultActionBindings();
     utilities::Logger::Info("SkipAdClicker startup completed.", "StartUp");
@@ -157,11 +199,31 @@ void StartUp::OpenOneFolder(const std::string& file_path, const std::function<bo
 
 std::optional<std::string> StartUp::StartupFolder()
 {
-    auto startup = ReadSetting("StartupFolder", "./SkipAd").toString().trimmed();
+    auto startup = ReadSetting("StartupFolder", "").toString().trimmed();
     if (startup.isEmpty()) {
         return std::nullopt;
     }
     return ResolvePath(startup);
+}
+
+bool StartUp::MinimizedWhenStarted()
+{
+    return QSettings().value(kMinimizedWhenStartedSetting, false).toBool();
+}
+
+void StartUp::SetMinimizedWhenStarted(bool minimized)
+{
+    QSettings().setValue(kMinimizedWhenStartedSetting, minimized);
+}
+
+bool StartUp::AutoStartPromptShown()
+{
+    return QSettings().value(kAutoStartPromptShownSetting, false).toBool();
+}
+
+void StartUp::SetAutoStartPromptShown()
+{
+    QSettings().setValue(kAutoStartPromptShownSetting, true);
 }
 
 QSettings StartUp::AppSettings()

@@ -2,23 +2,46 @@
 
 #include "DateTimeLib.hpp"
 #include "FilePathLib.hpp"
+#include "ManualResetEvent.hpp"
 
 #include <filesystem>
 
 namespace automationtest::utilities {
 
+ManualResetEvent& GlobalSetting::ScreenLockBlockEvent()
+{
+    static ManualResetEvent event;
+    return event;
+}
+
 bool GlobalSetting::StopTest() noexcept
 {
-    const bool previous = is_stop_test_requested;
-    is_stop_test_requested = true;
-    return previous;
+    return is_stop_test_requested.exchange(true);
 }
 
 bool GlobalSetting::ClearStopTest() noexcept
 {
-    const bool previous = is_stop_test_requested;
-    is_stop_test_requested = false;
-    return previous;
+    return is_stop_test_requested.exchange(false);
+}
+
+void GlobalSetting::SetScreenLockBlock()
+{
+    ScreenLockBlockEvent().Set();
+}
+
+void GlobalSetting::ClearScreenLockBlock()
+{
+    ScreenLockBlockEvent().Reset();
+}
+
+void GlobalSetting::WaitForScreenUnlockIfBlocked()
+{
+    ScreenLockBlockEvent().WaitWhileSet();
+}
+
+bool GlobalSetting::IsScreenLockBlockSet()
+{
+    return ScreenLockBlockEvent().IsSet();
 }
 
 std::string GlobalSetting::ImageFileFolder()

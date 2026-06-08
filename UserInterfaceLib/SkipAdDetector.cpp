@@ -514,7 +514,7 @@ std::optional<Bitmap> SkipAdDetector::ClickOnSkipAd(const std::vector<LocatedBit
         }
 
         const auto center = triangle->Center();
-        Logger::LogToView( "Found skip ad triangle at (" + std::to_string(center.x) + ", " + std::to_string(center.y) + ") in the " + BitmapHelper::DebugSave(image) + " bitmap." );
+        Logger::LogToView( "Found skip ad triangle at (" + std::to_string(center.x) + ", " + std::to_string(center.y) + ") in the " + BitmapHelper::DebugSave(image) + " screenshot." );
         mouse_click(Point {center.x + location.x, center.y + location.y});
         return std::nullopt;
     }

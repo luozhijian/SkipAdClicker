@@ -15,6 +15,8 @@
 namespace automationtest::app {
 
 class MainWindow : public QMainWindow {
+    Q_OBJECT
+
 public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow() override;
@@ -22,10 +24,24 @@ public:
     void ReStart();
     void ProcessCommandLine();
     void MinimizedApplication();
+    void ShowAndRestore();
+    void PromptForAutoStartOnFirstRun();
 
 protected:
     void closeEvent(QCloseEvent* event) override;
     void changeEvent(QEvent* event) override;
+#if defined(Q_OS_WIN)
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    bool nativeEvent(const QByteArray& eventType, void* message, qintptr* result) override;
+#else
+    bool nativeEvent(const QByteArray& eventType, void* message, long* result) override;
+#endif
+#endif
+
+#if defined(__linux__) && defined(AUTOMATIOTEST_HAS_QT_DBUS)
+private slots:
+    void OnScreenSaverActiveChanged(bool active);
+#endif
 
 private:
     void InitializeTrayIcon();
@@ -36,10 +52,21 @@ private:
     void SetCallInProcess(bool value);
     void UpdateIconsByRunState();
     void StopTest();
-    void ShowAndRestore();
-
+    void ScheduleFocusRepaint();
+    void SetScreenLockBlockState(bool is_locked);
+    bool SetStartAfterRestartEnabled(bool enabled);
+#if defined(Q_OS_WIN)
+    void RegisterSessionNotifications();
+    void UnregisterSessionNotifications();
+#endif
+#if defined(__linux__) && defined(AUTOMATIOTEST_HAS_QT_DBUS)
+    void RegisterScreenSaverNotifications();
+    void UnregisterScreenSaverNotifications();
+#endif
     LogView* log_view_ {nullptr};
     QMenu* recent_tests_menu_ {nullptr};
+    QAction* minimized_when_started_action_ {nullptr};
+    QAction* start_after_restart_action_ {nullptr};
     QSystemTrayIcon* tray_icon_ {nullptr};
     QIcon default_icon_ {};
     QIcon running_icon_ {};
@@ -47,6 +74,10 @@ private:
     QThread* worker_thread_ {nullptr};
     bool call_is_in_process_ {false};
     QString last_run_file_path_ {};
+#if defined(Q_OS_WIN)
+    WId session_notification_window_ {};
+    bool session_notifications_registered_ {false};
+#endif
 };
 
 } // namespace automationtest::app

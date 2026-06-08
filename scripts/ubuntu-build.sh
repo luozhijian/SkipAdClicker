@@ -7,4 +7,4 @@ cd "$repo_root"
 cmake --preset ubuntu-release
 cmake --build --preset ubuntu-release --target SkipAdClicker
 
-echo "Built: $repo_root/out/build/ubuntu-release/bin/SkipAdClicker"
+echo "Built: $repo_root/out/build/ubuntu-release/bin/skipadclicker"

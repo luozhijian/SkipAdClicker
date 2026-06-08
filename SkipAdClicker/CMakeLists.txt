@@ -64,13 +64,18 @@ if(AUTOMATIOTEST_QT_DBUS_TARGET)
 endif()
 
 if(WIN32)
-    target_link_libraries(SkipAdClicker PRIVATE user32 gdi32)
+    target_link_libraries(SkipAdClicker PRIVATE user32 gdi32 wtsapi32)
 endif()
 
 if(WIN32)
     set_target_properties(SkipAdClicker PROPERTIES
         WIN32_EXECUTABLE TRUE
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/x64/$<CONFIG>"
+    )
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set_target_properties(SkipAdClicker PROPERTIES
+        OUTPUT_NAME "skipadclicker"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     )
 else()
     set_target_properties(SkipAdClicker PROPERTIES

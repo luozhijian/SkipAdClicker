@@ -191,7 +191,7 @@ std::string OpenCvLib::InfoSaveMatAsBitmapFile(const cv::Mat& mat)
 
 std::string OpenCvLib::DebugSaveMatAsBitmapFile(const cv::Mat& mat )
 {
-    if (!GlobalSetting::save_bitmap_files && !Logger::IsAboveDebug()) {
+    if (!GlobalSetting::save_bitmap_files || !Logger::IsAboveDebug()) {
         return {};
     }
 

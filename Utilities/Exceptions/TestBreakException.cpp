@@ -7,6 +7,12 @@ TestBreakException::TestBreakException()
 {
 }
 
+TestBreakException::TestBreakException(const std::string& message)
+    : TestFlowException(message)
+{
+}
+
+
 void TestBreakException::Break()
 {
     throw TestBreakException();

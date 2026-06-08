@@ -2,7 +2,12 @@
 
 SkipAdClicker is a desktop automation tool that uses screenshots, OCR, and image detection to find and click "Skip Ad" style controls. The project is written in C++ with Qt for the UI, OpenCV for image processing, and Tesseract for OCR.
 
-It is fully tested on Windows. Linux and macOS support is in progress: the shared OpenCV detector is portable, non-Windows screenshot capture uses Qt, and mouse clicking is implemented with macOS Quartz or Linux X11/XTest. Windows application is released at Microsoft Store: https://apps.microsoft.com/detail/9nr67kb8hr4d?hl=en-US&gl=US
+It is a lightweight, single-threaded application that typically uses about 10% of one CPU thread. On most modern multi-core systems, this amounts to roughly 1%-2% of total CPU usage, making its impact on system performance negligible.
+  
+SkipAdClicker minimizes to the system tray and runs in the background. You can start or stop ad detection at any time, and optionally configure it to launch automatically when your computer starts via the Settings menu.
+
+
+It is fully tested on Windows, and Linux.  macOS support is in progress: the shared OpenCV detector is portable, non-Windows screenshot capture uses Qt, and mouse clicking is implemented with macOS Quartz or Linux X11/XTest. Windows application is released at Microsoft Store: https://apps.microsoft.com/detail/9nr67kb8hr4d?hl=en-US&gl=US
 
 The app is built around a small test-book/action engine, so the bundled `SkipAd` workflow can be adjusted through text files and settings instead of recompiling the application.
 

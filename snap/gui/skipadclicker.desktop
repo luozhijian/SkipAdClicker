@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=SkipAdClicker
+Comment=Automatically find and click Skip Ad controls
+Exec=skipadclicker
+Icon=${SNAP}/meta/gui/skipadclicker.png
+Terminal=false
+Categories=Utility;
+StartupNotify=true

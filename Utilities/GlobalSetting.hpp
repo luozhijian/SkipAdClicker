@@ -1,13 +1,16 @@
 #ifndef AUTOMATIOTEST_GLOBALSETTING_HPP
 #define AUTOMATIOTEST_GLOBALSETTING_HPP
 
+#include <atomic>
 #include <string>
 
 namespace automationtest::utilities {
 
+class ManualResetEvent;
+
 class GlobalSetting {
 public:
-    static inline bool is_stop_test_requested {false};
+    static inline std::atomic_bool is_stop_test_requested {false};
     static inline double number_in_quote_starts_from {131.0};
     static inline std::string current_running_folder {};
     static inline int screen_refresh_per_millisecond {0};
@@ -25,6 +28,10 @@ public:
 
     static bool StopTest() noexcept;
     static bool ClearStopTest() noexcept;
+    static void SetScreenLockBlock();
+    static void ClearScreenLockBlock();
+    static void WaitForScreenUnlockIfBlocked();
+    static bool IsScreenLockBlockSet();
     static std::string ImageFileFolder();
     static void SetImageFileFolder(const std::string& folder);
     static std::string DebugViewImageFileFolder();
@@ -38,6 +45,8 @@ private:
     static inline std::string debug_view_image_file_folder_ {};
     static inline std::string real_debug_view_image_file_folder_ {};
     static inline std::string tools_to_view_bitmap_ {};
+
+    static ManualResetEvent& ScreenLockBlockEvent();
 };
 
 } // namespace automationtest::utilities

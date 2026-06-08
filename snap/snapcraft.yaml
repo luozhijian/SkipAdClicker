@@ -1,0 +1,73 @@
+name: skipadclicker
+title: SkipAdClicker
+version: "0.1.3"
+summary: Desktop automation tool for finding and clicking Skip Ad controls
+description: |
+  SkipAdClicker automatically finds and clicks the "Skip Ad" button in YouTube videos using screenshots, OCR, and image recognition.
+  
+  It is a lightweight, single-threaded application that typically uses about 10% of one CPU thread. On most modern multi-core systems, this amounts to roughly 1% of total CPU usage, making its impact on system performance negligible.
+  
+  SkipAdClicker minimizes to the system tray and runs in the background. You can start or stop ad detection at any time, and optionally configure it to launch automatically when your computer starts via the Settings menu.
+  Source Code: https://github.com/luozhijian/SkipAdClicker
+base: core24
+grade: stable
+confinement: strict
+license: MIT
+platforms:
+  amd64:
+
+apps:
+  skipadclicker:
+    command: usr/bin/skipadclicker
+    autostart: skipadclicker.desktop
+    extensions:
+      - kde-neon-6
+    plugs:
+      - home
+      - removable-media
+    environment:
+      TESSDATA_PREFIX: $SNAP/usr/share/tesseract-ocr/5/tessdata
+      SESSION_MANAGER: ""
+
+parts:
+  skipadclicker:
+    plugin: nil
+    source: .
+    source-type: local
+    # Add or change the line directly below this comment:
+    build-packages:
+      - build-essential
+      - cmake
+      - ninja-build
+      - pkg-config
+      - libopencv-dev
+      - libtesseract-dev
+      - libleptonica-dev
+      - libx11-dev
+      - libxtst-dev
+    stage-packages:
+      - libopencv-dev
+      - libtesseract5
+      - liblept5
+      - tesseract-ocr-eng
+      - libx11-6
+      - libxtst6
+      - libcanberra-gtk-module
+      - libcanberra-gtk3-module
+    override-build: |
+      cmake -S "$CRAFT_PART_SRC" -B "$CRAFT_PART_BUILD/build" -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DAUTOMATIOTEST_BUILD_QT_APP=ON
+      cmake --build "$CRAFT_PART_BUILD/build" --target SkipAdClicker --parallel "$CRAFT_PARALLEL_BUILD_COUNT"
+
+      install -Dm755 "$CRAFT_PART_BUILD/build/bin/skipadclicker" "$CRAFT_PART_INSTALL/usr/bin/skipadclicker"
+      cp -a "$CRAFT_PART_BUILD/build/bin/SkipAd" "$CRAFT_PART_INSTALL/usr/bin/SkipAd"
+      install -Dm644 "$CRAFT_PART_BUILD/build/bin/SkipAdClicker.ini" "$CRAFT_PART_INSTALL/usr/bin/SkipAdClicker.ini"
+      install -Dm644 "$CRAFT_PART_BUILD/build/bin/SkipAdClicker.ico" "$CRAFT_PART_INSTALL/usr/bin/SkipAdClicker.ico"
+      install -Dm644 "$CRAFT_PART_BUILD/build/bin/SkipAdClicker_ON.ico" "$CRAFT_PART_INSTALL/usr/bin/SkipAdClicker_ON.ico"
+    prime:
+      - -usr/include
+      - -usr/lib/*/cmake
+      - -usr/lib/*/pkgconfig
+      - -usr/share/doc
+      - -usr/share/man

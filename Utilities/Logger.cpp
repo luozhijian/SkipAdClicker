@@ -19,6 +19,7 @@ namespace {
 
 std::mutex log_mutex;
 LogSettings current_settings {};
+constexpr std::uintmax_t max_log_file_size = 200ULL * 1024ULL * 1024ULL;
 
 std::string Trim(std::string value)
 {
@@ -56,6 +57,21 @@ std::string Timestamp()
 bool ShouldWrite(LogLevel level)
 {
     return current_settings.enabled && level >= current_settings.minimum_level && current_settings.minimum_level != LogLevel::Off;
+}
+
+void EnsureLogFileCanFitNextWrite(const std::filesystem::path& file_path, std::uintmax_t next_write_size)
+{
+    std::error_code error;
+    const auto current_size = std::filesystem::file_size(file_path, error);
+    if (error) {
+        return;
+    }
+
+    if (current_size + next_write_size <= max_log_file_size) {
+        return;
+    }
+
+    std::ofstream truncate(file_path, std::ios::trunc);
 }
 
 } // namespace
@@ -104,19 +120,19 @@ bool Logger::IsEnable()
 bool Logger::IsAboveDebug()
 {
     std::lock_guard lock(log_mutex);
-    return current_settings.enabled && current_settings.minimum_level <= LogLevel::Debug;
+    return current_settings.enabled && current_settings.minimum_level >= LogLevel::Debug;
 }
 
 bool Logger::IsAboveInfo()
 {
     std::lock_guard lock(log_mutex);
-    return current_settings.enabled && current_settings.minimum_level <= LogLevel::Info;
+    return current_settings.enabled && current_settings.minimum_level >= LogLevel::Info;
 }
 
 bool Logger::IsAboveError()
 {
     std::lock_guard lock(log_mutex);
-    return current_settings.enabled && current_settings.minimum_level <= LogLevel::Error;
+    return current_settings.enabled && current_settings.minimum_level >= LogLevel::Error;
 }
 
 void Logger::Error(const std::string& message, const std::string& category)
@@ -197,11 +213,13 @@ void Logger::Write(LogLevel level, const std::string& message, const std::string
     }
 
     if (!current_settings.file_path.empty()) {
-        const auto parent_path = std::filesystem::path(current_settings.file_path).parent_path();
+        const auto file_path = std::filesystem::path(current_settings.file_path);
+        const auto parent_path = file_path.parent_path();
         if (!parent_path.empty()) {
             std::filesystem::create_directories(parent_path);
         }
-        std::ofstream output(current_settings.file_path, std::ios::app);
+        EnsureLogFileCanFitNextWrite(file_path, text.size() + 1);
+        std::ofstream output(file_path, std::ios::app);
         if (output) {
             output << text << '\n';
         }

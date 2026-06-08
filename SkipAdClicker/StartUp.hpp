@@ -18,6 +18,10 @@ public:
     static void RegisterInteractiveAction(utilities::interface::IInteractiveAction* action_service);
     static void OpenOneFolder(const std::string& file_path, const std::function<bool()>& cancellation_requested = {}, const std::string& filename = {});
     static std::optional<std::string> StartupFolder();
+    static bool MinimizedWhenStarted();
+    static void SetMinimizedWhenStarted(bool minimized);
+    static bool AutoStartPromptShown();
+    static void SetAutoStartPromptShown();
     static QSettings AppSettings();
 };
 

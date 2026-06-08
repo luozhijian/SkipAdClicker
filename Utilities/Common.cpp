@@ -4,6 +4,8 @@
 #include <cctype>
 #include <sstream>
 
+#include "./Exceptions/TestException.hpp"
+
 namespace automationtest::utilities
 {
     void RegisterBindings(utilities::status::LoadFunctions& load_functions)
@@ -34,6 +36,19 @@ namespace automationtest::utilities
             .parameters = {
                 RegisteredParameter {.name = "value", .converter = [](const std::string& value) -> std::any {
                     return AnyToDouble(value).value_or(0.0);
+                }},
+            },
+        });
+
+        load_functions.RegisterMethod("ThrowException", RegisteredMethod {
+            .declaring_type = "Common",
+            .invoke = [](const std::vector<std::any>& arguments) -> std::any {
+                ThrowException(arguments.at(0));
+                return {};
+            },
+            .parameters = {
+                RegisteredParameter {.name = "value", .converter = [](const std::string& value) -> std::any {
+                    return value;
                 }},
             },
         });
@@ -190,5 +205,13 @@ namespace automationtest::utilities
             return false;
         }
         return ToLowerCopy(value.substr(value.size() - suffix.size())) == ToLowerCopy(suffix);
+    }
+
+    void ThrowException(const std::any& value)
+    {
+       if (value.type() == typeid(std::string)) 
+            throw automationtest::utilities::exceptions::TestException (Trim(std::any_cast<std::string>(value)));
+       else 
+            throw automationtest::utilities::exceptions::TestException();
     }
 }

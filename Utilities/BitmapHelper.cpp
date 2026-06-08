@@ -188,7 +188,7 @@ Bitmap BitmapHelper::ConvertToGrayscale(const Bitmap& bitmap)
 
 std::string BitmapHelper::InfoSave(const Bitmap& bitmap)
 {
-    if (!GlobalSetting::save_bitmap_files && ! Logger::IsAboveInfo() ) {
+    if (!GlobalSetting::save_bitmap_files || ! Logger::IsAboveInfo() ) {
         return {};
     }
 
@@ -198,7 +198,7 @@ std::string BitmapHelper::InfoSave(const Bitmap& bitmap)
 
 std::string BitmapHelper::DebugSave(const Bitmap& bitmap )
 {
-    if (!GlobalSetting::save_bitmap_files && !Logger::IsAboveDebug() ) {
+    if (!GlobalSetting::save_bitmap_files || !Logger::IsAboveDebug() ) {
         return {};
     }
     std::string filename= "bitmap" + IdGenerator::IdWithDateTime() + ".bmp";
@@ -207,7 +207,7 @@ std::string BitmapHelper::DebugSave(const Bitmap& bitmap )
 
 std::string BitmapHelper::DebugSave(const Bitmap& bitmap, const std::string& filename)
 {
-    if (!GlobalSetting::save_bitmap_files && !Logger::IsAboveDebug()) {
+    if (!GlobalSetting::save_bitmap_files || !Logger::IsAboveDebug()) {
         return {};
     }
     if (filename.empty())

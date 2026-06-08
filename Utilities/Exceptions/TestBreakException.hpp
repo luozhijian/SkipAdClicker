@@ -7,7 +7,8 @@ namespace automationtest::utilities::exceptions {
 
 class TestBreakException : public TestFlowException {
 public:
-    TestBreakException();
+    TestBreakException();    
+    TestBreakException(const std::string& message);
     static void Break();
 };
 

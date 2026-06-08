@@ -39,7 +39,7 @@ namespace automationtest::utilities {
 	static bool StoreFalse() noexcept;
 	static double StoreValue(double value) noexcept;
 
-
+    static void ThrowException(const std::any& value);
 	void RegisterBindings(utilities::status::LoadFunctions& load_functions);
 }
 
