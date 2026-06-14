@@ -6,7 +6,9 @@
 #include <QApplication>
 #include <QByteArray>
 #include <QGuiApplication>
+#include <QIcon>
 #include <QMessageBox>
+#include <QTimer>
 #include <iostream>
 
 namespace {
@@ -102,9 +104,10 @@ int main(int argc, char* argv[])
 
     automationtest::app::g_SharedMemorySemaphore =
         new automationtest::app::SharedMemorySemaphore(SystemInfo::GetCurrentProcessName());
-    if (SystemInfo::IsAnotherProcessWithSameNameRunning() )
+    const bool another_instance_running = automationtest::app::g_SharedMemorySemaphore->Exists();
+    if (another_instance_running)
         automationtest::utilities::Logger::Debug( "Semaphore name: " + automationtest::app::g_SharedMemorySemaphore->Name() );
-    if (SystemInfo::IsAnotherProcessWithSameNameRunning() )
+    if (another_instance_running)
     {
         automationtest::app::g_SharedMemorySemaphore->OpenForConsumer();
         automationtest::app::g_SharedMemorySemaphore->Trigger();
@@ -115,9 +118,13 @@ int main(int argc, char* argv[])
         return 0;
     }
     QApplication app(argc, argv);
-    // QApplication::setApplicationName("SkipAdClicker");
+    QApplication::setApplicationName("SkipAdClicker");
     QApplication::setOrganizationName("SkipAdClicker");
     QApplication::setQuitOnLastWindowClosed(false);
+
+    auto application_icon = QIcon(QCoreApplication::applicationDirPath() + "/SkipAdClicker.ico");
+
+    QApplication::setWindowIcon(application_icon);
 
     WarnIfWaylandSession();
 
@@ -125,12 +132,14 @@ int main(int argc, char* argv[])
 
     automationtest::app::MainWindow window;
 
-    if (automationtest::app::StartUp::MinimizedWhenStarted()) {
-        window.hide();
-    } else {
+    const bool start_minimized = automationtest::app::StartUp::MinimizedWhenStarted();
+    if (!start_minimized) {
         window.show();
     }
     window.ProcessCommandLine();
+    if (start_minimized) {
+        QTimer::singleShot(0, &window, &automationtest::app::MainWindow::MinimizedApplication);
+    }
 
     int ret = app.exec();
 

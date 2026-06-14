@@ -4,13 +4,22 @@
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+#ifndef _WIN32
 #include <fcntl.h>
+#endif
 #include <iostream>
 #include <stdexcept>
+#ifndef _WIN32
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <thread>
 #include <unistd.h>
+#endif
+#include <thread>
+
+#ifdef _WIN32
+#include <windows.h>
+#undef GetUserName
+#endif
 
 #include  "SharedMemorySemaphore.hpp"
 #include  "MainWindow.hpp"
@@ -18,9 +27,11 @@
 #include  "../Utilities/OSRelated/SystemInfo.hpp"
 namespace automationtest::app {
 
+#ifndef _WIN32
 namespace {
     constexpr std::uint32_t kInitializedMagic = 0x534d5348; // "SMSH"
 }
+#endif
 
  SharedMemorySemaphore* g_SharedMemorySemaphore=nullptr;
     void ClearSharedMemorySemaphore()
@@ -40,6 +51,14 @@ namespace {
     // Check whether shared memory semaphore exists
     bool SharedMemorySemaphore::Exists() const
     {
+#ifdef _WIN32
+        HANDLE semaphore = ::OpenSemaphoreA(SYNCHRONIZE | SEMAPHORE_MODIFY_STATE, FALSE, name_.c_str());
+        if (semaphore == nullptr)
+            return false;
+
+        ::CloseHandle(semaphore);
+        return true;
+#else
         int fd = shm_open(name_.c_str(), O_RDWR, 0);
         if (fd == -1)
         {
@@ -53,6 +72,7 @@ namespace {
 
         close(fd);
         return true;
+#endif
     }
 
     // Clear / remove shared memory semaphore
@@ -60,6 +80,9 @@ namespace {
     {
         StopThreadToWait();
 
+#ifdef _WIN32
+        Close();
+#else
         SharedSemaphoreState* mappedState = state_;
         int temporaryFd = -1;
         bool temporaryMapping = false;
@@ -120,6 +143,7 @@ namespace {
         {
             Close();
         }
+#endif
     }
 
     // Creator creates semaphore and ws for consumer trigger
@@ -128,6 +152,18 @@ namespace {
         std::cout <<  "CreateForCreator";
 
         Close();
+#ifdef _WIN32
+        semaphore_ = ::CreateSemaphoreA(
+            nullptr,
+            static_cast<LONG>(initialValue),
+            LONG_MAX,
+            name_.c_str());
+        if (semaphore_ == nullptr)
+        {
+            automationtest::utilities::Logger::Error(
+                "CreateSemaphore failed in CreateForCreator(): " + name_);
+        }
+#else
         shm_fd_ = shm_open(
             name_.c_str(),
             O_CREAT | O_EXCL | O_RDWR,
@@ -178,6 +214,7 @@ namespace {
         }
 
         state_->initialized = kInitializedMagic;
+#endif
     }
 
     // Consumer opens existing semaphore
@@ -185,6 +222,17 @@ namespace {
     {
         Close();
 
+#ifdef _WIN32
+        semaphore_ = ::OpenSemaphoreA(
+            SYNCHRONIZE | SEMAPHORE_MODIFY_STATE,
+            FALSE,
+            name_.c_str());
+        if (semaphore_ == nullptr)
+        {
+            automationtest::utilities::Logger::Error(
+                "OpenSemaphore failed in OpenForConsumer(): " + name_);
+        }
+#else
         shm_fd_ = shm_open(name_.c_str(), O_RDWR, 0);
         if (shm_fd_ == -1)
         {
@@ -205,6 +253,7 @@ namespace {
                 "Shared memory semaphore is not initialized in OpenForConsumer(): " + name_);
             Close();
         }
+#endif
     }
 
     // Creator waits
@@ -231,6 +280,7 @@ namespace {
         });
     }
 
+#ifndef _WIN32
     bool SharedMemorySemaphore::MapSharedMemory(int fd)
     {
         void* memory = mmap(nullptr, sizeof(SharedSemaphoreState), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
@@ -258,9 +308,14 @@ namespace {
 
         return state_ != nullptr && state_->initialized == kInitializedMagic;
     }
+#endif
 
     bool SharedMemorySemaphore::WaitForSignal(int timeoutMs)
     {
+#ifdef _WIN32
+        return semaphore_ != nullptr
+            && ::WaitForSingleObject(semaphore_, static_cast<DWORD>(timeoutMs)) == WAIT_OBJECT_0;
+#else
         timespec ts;
         clock_gettime(CLOCK_REALTIME, &ts);
 
@@ -282,11 +337,16 @@ namespace {
             return false;
 
         return false;
+#endif
     }
 
     void SharedMemorySemaphore::RealWait(std::stop_token stoken)
     {
-        if (!state_)
+#ifdef _WIN32
+        if (semaphore_ == nullptr)
+#else
+        if (state_ == nullptr)
+#endif
         {
             automationtest::utilities::Logger::Error ("Shared memory semaphore is not opened.");
             return;
@@ -294,7 +354,11 @@ namespace {
 
         while (!stoken.stop_requested()) 
         {
+#ifdef _WIN32
+            if (semaphore_ == nullptr)
+#else
             if (state_ == nullptr ) 
+#endif
                 break;
             if ( WaitForSignal ( 200)  )
             {
@@ -307,7 +371,14 @@ namespace {
     // Consumer triggers creator
     void SharedMemorySemaphore::Trigger()
     {
-        if (!state_)
+#ifdef _WIN32
+        if (semaphore_ == nullptr)
+            throw std::runtime_error("Shared memory semaphore is not opened.");
+
+        if (!::ReleaseSemaphore(semaphore_, 1, nullptr))
+            throw std::runtime_error("ReleaseSemaphore failed.");
+#else
+        if (state_ == nullptr)
             throw std::runtime_error("Shared memory semaphore is not opened.");
 
         if (sem_post(&state_->semaphore) == -1)
@@ -315,12 +386,20 @@ namespace {
             throw std::runtime_error(
                 "sem_post failed: " + std::string(std::strerror(errno)));
         }
+#endif
     }
 
     void SharedMemorySemaphore::Close()
     {
         StopThreadToWait();
 
+#ifdef _WIN32
+        if (semaphore_ != nullptr)
+        {
+            ::CloseHandle(semaphore_);
+            semaphore_ = nullptr;
+        }
+#else
         if (state_)
         {
             munmap(state_, sizeof(SharedSemaphoreState));
@@ -332,15 +411,25 @@ namespace {
             close(shm_fd_);
             shm_fd_ = -1;
         }
+#endif
     }
 
      std::string SharedMemorySemaphore::BuildName(const std::string& processName)
     {
-        // POSIX shared memory names must start with '/'
-
         const char* snapName = std::getenv("SNAP_NAME");
-        std::string user = SystemInfo::GetUserName();
+        std::string user = (SystemInfo::GetUserName)();
 
+#ifdef _WIN32
+        std::string name = "Local\\" + user + "_" + processName + "_sem";
+        for (char& character : name)
+        {
+            if (character == '\\' || character == '/')
+                character = '_';
+        }
+        name.replace(0, 6, "Local\\");
+        return name;
+#else
+        // POSIX shared memory names must start with '/'
         if (snapName)
         {
             std::string name = "/snap." + std::string(snapName) + "." + user + "_" + processName + "_sem";
@@ -351,6 +440,7 @@ namespace {
             std::string name = "/" + user + "_" + processName + "_sem";
             return name;
         }
+#endif
 
         
     }

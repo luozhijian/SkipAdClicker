@@ -16,6 +16,8 @@
 #include <Lmcons.h>
 #include <process.h>
 
+#undef GetUserName
+
 namespace SystemInfo
 {
     std::string GetUserName()
@@ -23,7 +25,7 @@ namespace SystemInfo
         char buffer[UNLEN + 1];
         DWORD size = UNLEN + 1;
 
-        if (GetUserNameA(buffer, &size))
+        if (::GetUserNameA(buffer, &size))
         {
             return buffer;
         }
@@ -35,7 +37,7 @@ namespace SystemInfo
     {
         char buffer[MAX_PATH];
 
-        DWORD len = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+        DWORD len = ::GetModuleFileNameA(nullptr, buffer, MAX_PATH);
 
         if (len == 0)
         {
@@ -50,7 +52,7 @@ namespace SystemInfo
         char buffer[MAX_COMPUTERNAME_LENGTH + 1];
         DWORD size = sizeof(buffer);
 
-        if (GetComputerNameA(buffer, &size))
+        if (::GetComputerNameA(buffer, &size))
         {
             return buffer;
         }

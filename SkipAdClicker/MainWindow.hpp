@@ -9,6 +9,7 @@
 #include <QMenu>
 #include <QSystemTrayIcon>
 #include <QThread>
+#include <QTimer>
 
 #include <atomic>
 
@@ -44,7 +45,11 @@ private slots:
 #endif
 
 private:
+    static QIcon loadIcoFileSafely(const QString& file_path);
     void InitializeTrayIcon();
+    void EnsureTrayIconVisible();
+    void HideToTray();
+    void ExitApplication();
     void BuildMenus();
     void PopulateRecentMenu();
     void OpenOneFolder(const QString& file_path);
@@ -54,6 +59,7 @@ private:
     void StopTest();
     void ScheduleFocusRepaint();
     void SetScreenLockBlockState(bool is_locked);
+    bool IsStartAfterRestartEnabled() const;
     bool SetStartAfterRestartEnabled(bool enabled);
 #if defined(Q_OS_WIN)
     void RegisterSessionNotifications();
@@ -68,15 +74,18 @@ private:
     QAction* minimized_when_started_action_ {nullptr};
     QAction* start_after_restart_action_ {nullptr};
     QSystemTrayIcon* tray_icon_ {nullptr};
+    QTimer* tray_retry_timer_ {nullptr};
     QIcon default_icon_ {};
     QIcon running_icon_ {};
     std::atomic_bool cancellation_requested_ {false};
     QThread* worker_thread_ {nullptr};
     bool call_is_in_process_ {false};
+    bool exit_requested_ {false};
     QString last_run_file_path_ {};
 #if defined(Q_OS_WIN)
     WId session_notification_window_ {};
     bool session_notifications_registered_ {false};
+    unsigned int taskbar_created_message_ {0};
 #endif
 };
 

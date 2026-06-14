@@ -44,7 +44,12 @@ file(GLOB_RECURSE AUTOMATIOTEST_APP_SOURCES CONFIGURE_DEPENDS "*.cpp")
 add_executable(SkipAdClicker
     ${AUTOMATIOTEST_APP_HEADERS}
     ${AUTOMATIOTEST_APP_SOURCES}
+    SkipAdClicker.qrc
 )
+
+if(WIN32)
+    target_sources(SkipAdClicker PRIVATE SkipAdClicker.rc)
+endif()
 
 target_include_directories(SkipAdClicker PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(SkipAdClicker
@@ -64,7 +69,7 @@ if(AUTOMATIOTEST_QT_DBUS_TARGET)
 endif()
 
 if(WIN32)
-    target_link_libraries(SkipAdClicker PRIVATE user32 gdi32 wtsapi32)
+    target_link_libraries(SkipAdClicker PRIVATE user32 gdi32 wtsapi32 shell32 ole32)
 endif()
 
 if(WIN32)
@@ -104,6 +109,16 @@ if(WIN32 AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.21)
             $<TARGET_RUNTIME_DLLS:SkipAdClicker>
             $<TARGET_FILE_DIR:SkipAdClicker>
         COMMAND_EXPAND_LISTS
+    )
+endif()
+
+if(WIN32 AND TARGET Qt6::QWindowsIntegrationPlugin)
+    add_custom_command(TARGET SkipAdClicker POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "$<TARGET_FILE_DIR:SkipAdClicker>/platforms"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:Qt6::QWindowsIntegrationPlugin>"
+            "$<TARGET_FILE_DIR:SkipAdClicker>/platforms"
     )
 endif()
 

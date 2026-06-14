@@ -75,10 +75,29 @@ QSettings WindowsRunSettings()
         QSettings::NativeFormat);
 }
 
+QString WindowsStartupCommand()
+{
+    const auto executable = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
+    if (executable.isEmpty()) {
+        return {};
+    }
+    return QString("\"%1\"").arg(executable);
+}
+
 bool IsPlatformRegistrationEnabled()
 {
     auto run_settings = WindowsRunSettings();
-    return run_settings.contains(kApplicationName);
+    if (!run_settings.contains(kApplicationName)) {
+        return false;
+    }
+
+    const auto expected_command = WindowsStartupCommand();
+    if (!expected_command.isEmpty()
+        && run_settings.value(kApplicationName).toString() != expected_command) {
+        run_settings.setValue(kApplicationName, expected_command);
+        run_settings.sync();
+    }
+    return run_settings.status() == QSettings::NoError;
 }
 
 bool UpdatePlatformRegistration(bool enabled, QString* error_message)
@@ -86,11 +105,11 @@ bool UpdatePlatformRegistration(bool enabled, QString* error_message)
     auto run_settings = WindowsRunSettings();
 
     if (enabled) {
-        const auto executable = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
-        if (executable.isEmpty()) {
-            return Fail(error_message, "Could not determine the application path.");
+        const auto command = WindowsStartupCommand();
+        if (command.isEmpty()) {
+            return Fail(error_message, "Could not determine the Windows startup command.");
         }
-        run_settings.setValue(kApplicationName, QString("\"%1\"").arg(executable));
+        run_settings.setValue(kApplicationName, command);
     } else {
         run_settings.remove(kApplicationName);
     }

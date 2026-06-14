@@ -693,7 +693,7 @@ void StartBitmapViewer(const std::string& filename, const std::string& log_categ
 
 } // namespace
 
-void DM(cv::Mat& mat)
+void DM(const cv::Mat& mat)
 {
     if (mat.empty()) {
         automationtest::utilities::Logger::Error("Cannot display an empty cv::Mat.", "DM");

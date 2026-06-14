@@ -18,20 +18,23 @@ set(AUTOMATIOTEST_TESSERACT_LIBRARY_HINTS
 )
 
 if(AUTOMATIOTEST_ENABLE_TESSERACT)
-    find_path(AUTOMATIOTEST_TESSERACT_INCLUDE_DIR
-        NAMES tesseract/baseapi.h
-        HINTS ${AUTOMATIOTEST_TESSERACT_INCLUDE_HINTS}
-    )
+    find_package(Tesseract CONFIG QUIET)
+    if(NOT TARGET Tesseract::libtesseract)
+        find_path(AUTOMATIOTEST_TESSERACT_INCLUDE_DIR
+            NAMES tesseract/baseapi.h
+            HINTS ${AUTOMATIOTEST_TESSERACT_INCLUDE_HINTS}
+        )
 
-    find_library(AUTOMATIOTEST_TESSERACT_LIBRARY
-        NAMES tesseract libtesseract-5 tesseract54 tesseract53
-        HINTS ${AUTOMATIOTEST_TESSERACT_LIBRARY_HINTS}
-    )
+        find_library(AUTOMATIOTEST_TESSERACT_LIBRARY
+            NAMES tesseract libtesseract-5 tesseract55 tesseract54 tesseract53
+            HINTS ${AUTOMATIOTEST_TESSERACT_LIBRARY_HINTS}
+        )
 
-    find_library(AUTOMATIOTEST_LEPTONICA_LIBRARY
-        NAMES leptonica lept
-        HINTS ${AUTOMATIOTEST_TESSERACT_LIBRARY_HINTS}
-    )
+        find_library(AUTOMATIOTEST_LEPTONICA_LIBRARY
+            NAMES leptonica lept
+            HINTS ${AUTOMATIOTEST_TESSERACT_LIBRARY_HINTS}
+        )
+    endif()
 endif()
 
 add_library(AutomatioTestOcrLib
@@ -44,7 +47,10 @@ target_link_libraries(AutomatioTestOcrLib PUBLIC AutomatioTestUtilities Automati
 
 set(AUTOMATIOTEST_HAS_TESSERACT 0)
 
-if(AUTOMATIOTEST_ENABLE_TESSERACT AND AUTOMATIOTEST_TESSERACT_INCLUDE_DIR AND AUTOMATIOTEST_TESSERACT_LIBRARY AND AUTOMATIOTEST_LEPTONICA_LIBRARY)
+if(AUTOMATIOTEST_ENABLE_TESSERACT AND TARGET Tesseract::libtesseract)
+    target_link_libraries(AutomatioTestOcrLib PRIVATE Tesseract::libtesseract)
+    set(AUTOMATIOTEST_HAS_TESSERACT 1)
+elseif(AUTOMATIOTEST_ENABLE_TESSERACT AND AUTOMATIOTEST_TESSERACT_INCLUDE_DIR AND AUTOMATIOTEST_TESSERACT_LIBRARY AND AUTOMATIOTEST_LEPTONICA_LIBRARY)
     target_include_directories(AutomatioTestOcrLib PRIVATE ${AUTOMATIOTEST_TESSERACT_INCLUDE_DIR})
     target_link_libraries(AutomatioTestOcrLib PRIVATE ${AUTOMATIOTEST_TESSERACT_LIBRARY} ${AUTOMATIOTEST_LEPTONICA_LIBRARY})
     set(AUTOMATIOTEST_HAS_TESSERACT 1)

@@ -11,16 +11,21 @@
 
 
 #include <QApplication>
+#include <QCheckBox>
 #include <QCloseEvent>
 #include <QCoreApplication>
 #include <QCursor>
 #include <QDir>
+#include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QImage>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QMetaObject>
+#include <QPixmap>
 #include <QSignalBlocker>
+#include <QStyle>
 #include <QThread>
 #include <QTimer>
 #include <QWindow>
@@ -30,7 +35,12 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#include <appmodel.h>
+#include <shlobj.h>
+#include <shobjidl.h>
 #include <wtsapi32.h>
+
+#include <vector>
 #endif
 
 #if defined(__linux__)
@@ -145,7 +155,194 @@ void RequestX11Activation(WId window_id)
 }
 #endif
 
+#if defined(Q_OS_WIN)
+constexpr auto kWindowsStartupShortcutName = "SkipAdClicker.lnk";
+
+QString WindowsPackageFamilyName()
+{
+    UINT32 family_name_length = 0;
+    if (GetCurrentPackageFamilyName(&family_name_length, nullptr) != ERROR_INSUFFICIENT_BUFFER
+        || family_name_length == 0) {
+        return {};
+    }
+
+    std::vector<wchar_t> family_name(family_name_length);
+    if (GetCurrentPackageFamilyName(&family_name_length, family_name.data()) != ERROR_SUCCESS) {
+        return {};
+    }
+    return QString::fromWCharArray(family_name.data());
+}
+
+QString WindowsStartupShortcutPath()
+{
+    PWSTR startup_path = nullptr;
+    const auto result = SHGetKnownFolderPath(FOLDERID_Startup, KF_FLAG_CREATE, nullptr, &startup_path);
+    if (FAILED(result) || startup_path == nullptr) {
+        if (startup_path != nullptr) {
+            CoTaskMemFree(startup_path);
+        }
+        return {};
+    }
+
+    const auto path = QDir(QString::fromWCharArray(startup_path))
+                          .absoluteFilePath(kWindowsStartupShortcutName);
+    CoTaskMemFree(startup_path);
+    return path;
+}
+
+bool IsPackagedWindowsStartupTaskEnabled()
+{
+    if (WindowsPackageFamilyName().isEmpty()) {
+        return false;
+    }
+    const auto shortcut_path = WindowsStartupShortcutPath();
+    return !shortcut_path.isEmpty() && QFileInfo::exists(shortcut_path);
+}
+
+bool SetPackagedWindowsStartupTaskEnabled(bool enabled, QString* error_message)
+{
+    const auto shortcut_path = WindowsStartupShortcutPath();
+    if (shortcut_path.isEmpty()) {
+        if (error_message != nullptr) {
+            *error_message = "Could not locate the current user's Windows Startup folder.";
+        }
+        return false;
+    }
+
+    if (!enabled) {
+        if (!QFileInfo::exists(shortcut_path) || QFile::remove(shortcut_path)) {
+            return true;
+        }
+        if (error_message != nullptr) {
+            *error_message = QString("Could not remove startup shortcut: %1").arg(shortcut_path);
+        }
+        return false;
+    }
+
+    const auto package_family_name = WindowsPackageFamilyName();
+    if (package_family_name.isEmpty()) {
+        if (error_message != nullptr) {
+            *error_message = "Could not determine the installed Windows package identity.";
+        }
+        return false;
+    }
+
+    const auto explorer_path = QDir::toNativeSeparators(
+        QDir(qEnvironmentVariable("WINDIR", "C:\\Windows")).absoluteFilePath("explorer.exe"));
+    const auto arguments = QString("shell:AppsFolder\\%1!App").arg(package_family_name);
+
+    const auto initialize_result = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    const bool uninitialize_com = SUCCEEDED(initialize_result);
+    if (FAILED(initialize_result) && initialize_result != RPC_E_CHANGED_MODE) {
+        if (error_message != nullptr) {
+            *error_message = "Could not initialize Windows shortcut support.";
+        }
+        return false;
+    }
+
+    IShellLinkW* shell_link = nullptr;
+    auto result = CoCreateInstance(
+        CLSID_ShellLink,
+        nullptr,
+        CLSCTX_INPROC_SERVER,
+        IID_PPV_ARGS(&shell_link));
+    if (SUCCEEDED(result)) {
+        result = shell_link->SetPath(
+            reinterpret_cast<LPCWSTR>(explorer_path.utf16()));
+    }
+    if (SUCCEEDED(result)) {
+        result = shell_link->SetArguments(
+            reinterpret_cast<LPCWSTR>(arguments.utf16()));
+    }
+    if (SUCCEEDED(result)) {
+        result = shell_link->SetDescription(L"Start SkipAdClicker after Windows sign-in");
+    }
+
+    IPersistFile* persist_file = nullptr;
+    if (SUCCEEDED(result)) {
+        result = shell_link->QueryInterface(IID_PPV_ARGS(&persist_file));
+    }
+    if (SUCCEEDED(result)) {
+        result = persist_file->Save(
+            reinterpret_cast<LPCWSTR>(shortcut_path.utf16()),
+            TRUE);
+    }
+
+    if (persist_file != nullptr) {
+        persist_file->Release();
+    }
+    if (shell_link != nullptr) {
+        shell_link->Release();
+    }
+    if (uninitialize_com) {
+        CoUninitialize();
+    }
+
+    if (FAILED(result)) {
+        if (error_message != nullptr) {
+            *error_message = QString("Could not create startup shortcut (0x%1).")
+                                 .arg(static_cast<qulonglong>(result), 8, 16, QLatin1Char('0'));
+        }
+        return false;
+    }
+    return true;
+}
+#endif
+
 } // namespace
+
+QIcon MainWindow::loadIcoFileSafely(const QString& file_path)
+{
+    const QFileInfo icon_file(file_path);
+    if (!icon_file.exists() || !icon_file.isFile()) {
+        qWarning() << "Icon file does not exist:" << file_path;
+        return QApplication::style()->standardIcon(QStyle::SP_ComputerIcon);
+    }
+
+#if defined(Q_OS_WIN)
+    const auto native_path = QDir::toNativeSeparators(icon_file.absoluteFilePath()).toStdWString();
+    QIcon icon;
+    const QList<QSize> requested_sizes {
+        {16, 16},
+        {32, 32},
+        {48, 48},
+        {64, 64},
+        {256, 256},
+    };
+
+    for (const auto& size : requested_sizes) {
+        HICON native_icon = static_cast<HICON>(LoadImageW(
+            nullptr,
+            native_path.c_str(),
+            IMAGE_ICON,
+            size.width(),
+            size.height(),
+            LR_LOADFROMFILE | LR_CREATEDIBSECTION));
+        if (native_icon == nullptr) {
+            continue;
+        }
+
+        const QImage image = QImage::fromHICON(native_icon);
+        DestroyIcon(native_icon);
+        if (!image.isNull()) {
+            icon.addPixmap(QPixmap::fromImage(image));
+        }
+    }
+
+    if (!icon.isNull()) {
+        return icon;
+    }
+    qWarning() << "Windows could not decode icon file:" << icon_file.absoluteFilePath();
+#else
+    const QIcon icon(icon_file.absoluteFilePath());
+    if (!icon.isNull()) {
+        return icon;
+    }
+    qWarning() << "Qt could not decode icon file:" << icon_file.absoluteFilePath();
+#endif
+
+    return QApplication::style()->standardIcon(QStyle::SP_ComputerIcon);
+}
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -156,9 +353,12 @@ MainWindow::MainWindow(QWidget* parent)
     log_view_ = new LogView(this);
     setCentralWidget(log_view_);
 
-    default_icon_ = QIcon(QCoreApplication::applicationDirPath() + "/SkipAdClicker.ico");
-    running_icon_ = QIcon(QCoreApplication::applicationDirPath() + "/SkipAdClicker_ON.ico");
+    const auto application_directory = QCoreApplication::applicationDirPath();
+    default_icon_ = loadIcoFileSafely(application_directory + "/SkipAdClicker.ico");
+    running_icon_ = loadIcoFileSafely(application_directory + "/SkipAdClicker_ON.ico");
+
     if (!default_icon_.isNull()) {
+        QApplication::setWindowIcon(default_icon_);
         setWindowIcon(default_icon_);
     }
 
@@ -217,6 +417,7 @@ void MainWindow::SetScreenLockBlockState(bool is_locked)
 void MainWindow::RegisterSessionNotifications()
 {
     session_notification_window_ = winId();
+    taskbar_created_message_ = RegisterWindowMessageW(L"TaskbarCreated");
     if (session_notification_window_ == 0) {
         return;
     }
@@ -315,8 +516,7 @@ void MainWindow::BuildMenus()
     PopulateRecentMenu();
     file_menu->addSeparator();
     file_menu->addAction("Exit", this, [this]() {
-        StopTest();
-        QApplication::quit();
+        ExitApplication();
     });
 
     auto* view_menu = menuBar()->addMenu("&View");
@@ -325,6 +525,13 @@ void MainWindow::BuildMenus()
     });
 
     auto* settings_menu = menuBar()->addMenu("&Settings");
+    start_after_restart_action_ = settings_menu->addAction("Start Application After Restart");
+    start_after_restart_action_->setCheckable(true);
+    start_after_restart_action_->setChecked(IsStartAfterRestartEnabled());
+    connect(start_after_restart_action_, &QAction::toggled, this, [this](bool enabled) {
+        SetStartAfterRestartEnabled(enabled);
+    });
+
     minimized_when_started_action_ = settings_menu->addAction("Minimized when started");
     minimized_when_started_action_->setCheckable(true);
     minimized_when_started_action_->setChecked(StartUp::MinimizedWhenStarted());
@@ -332,20 +539,25 @@ void MainWindow::BuildMenus()
         StartUp::SetMinimizedWhenStarted(minimized);
     });
 
-    start_after_restart_action_ = settings_menu->addAction("Start Application After Restart");
-    start_after_restart_action_->setCheckable(true);
-    start_after_restart_action_->setChecked(ApplicationAutoStart::IsEnabled());
-    connect(start_after_restart_action_, &QAction::toggled, this, [this](bool enabled) {
-        SetStartAfterRestartEnabled(enabled);
-    });
 }
 
 bool MainWindow::SetStartAfterRestartEnabled(bool enabled)
 {
     QString error_message;
-    if (!ApplicationAutoStart::SetEnabled(enabled, &error_message)) {
+    bool update_succeeded = false;
+#if defined(Q_OS_WIN)
+    if (!WindowsPackageFamilyName().isEmpty()) {
+        update_succeeded = SetPackagedWindowsStartupTaskEnabled(enabled, &error_message);
+    } else {
+        update_succeeded = ApplicationAutoStart::SetEnabled(enabled, &error_message);
+    }
+#else
+    update_succeeded = ApplicationAutoStart::SetEnabled(enabled, &error_message);
+#endif
+
+    if (!update_succeeded) {
         const QSignalBlocker blocker(start_after_restart_action_);
-        start_after_restart_action_->setChecked(ApplicationAutoStart::IsEnabled());
+        start_after_restart_action_->setChecked(IsStartAfterRestartEnabled());
         QMessageBox::warning(
             this,
             "SkipAdClicker",
@@ -362,6 +574,16 @@ bool MainWindow::SetStartAfterRestartEnabled(bool enabled)
     return true;
 }
 
+bool MainWindow::IsStartAfterRestartEnabled() const
+{
+#if defined(Q_OS_WIN)
+    if (!WindowsPackageFamilyName().isEmpty()) {
+        return IsPackagedWindowsStartupTaskEnabled();
+    }
+#endif
+    return ApplicationAutoStart::IsEnabled();
+}
+
 void MainWindow::PromptForAutoStartOnFirstRun()
 {
     if (StartUp::AutoStartPromptShown()) {
@@ -369,23 +591,26 @@ void MainWindow::PromptForAutoStartOnFirstRun()
     }
 
     StartUp::SetAutoStartPromptShown();
-    if (ApplicationAutoStart::IsEnabled()) {
+    if (IsStartAfterRestartEnabled()) {
         return;
     }
 
-    const auto answer = QMessageBox::question(
-        this,
-        "Start SkipAdClicker Automatically?",
-        "Would you like SkipAdClicker to start automatically after your computer restarts?\n\n"
-        "If you choose Yes, SkipAdClicker will:\n"
-        "- start automatically after restart\n"
-        "- start minimized in the system tray\n\n"
-        "You can change these options later from the Settings menu.",
-        QMessageBox::Yes | QMessageBox::No,
-        QMessageBox::No);
+    QMessageBox dialog(this);
+    dialog.setWindowTitle("SkipAdClicker Startup");
+    dialog.setIcon(QMessageBox::Question);
+    dialog.setText("Choose whether SkipAdClicker should start with Windows.");
+    dialog.setInformativeText(
+        "When enabled, SkipAdClicker starts minimized in the system tray. "
+        "You can change this later from the Settings menu.");
+    dialog.setStandardButtons(QMessageBox::Ok );
+    dialog.setDefaultButton(QMessageBox::Ok);
 
-    if (answer == QMessageBox::Yes) {
-        SetStartAfterRestartEnabled(true);
+    auto* auto_start_checkbox = new QCheckBox("Start automatically after restart", &dialog);
+    auto_start_checkbox->setChecked(true);
+    dialog.setCheckBox(auto_start_checkbox);
+
+    if (dialog.exec() == QMessageBox::Ok) {
+        SetStartAfterRestartEnabled(auto_start_checkbox->isChecked());
     }
 }
 
@@ -397,7 +622,7 @@ void MainWindow::InitializeTrayIcon()
 
     auto* tray_menu = new QMenu(this);
     tray_menu->addAction("Maximize", this, [this]() { ShowAndRestore(); });
-    tray_menu->addAction("Exit", this, []() { QApplication::quit(); });
+    tray_menu->addAction("Exit", this, [this]() { ExitApplication(); });
     tray_menu->addSeparator();
     tray_menu->addAction("Start", this, [this]() {
         if (!last_run_file_path_.isEmpty()) {
@@ -418,7 +643,43 @@ void MainWindow::InitializeTrayIcon()
         }
     });
 
+    EnsureTrayIconVisible();
+    tray_retry_timer_ = new QTimer(this);
+    tray_retry_timer_->setInterval(2000);
+    connect(tray_retry_timer_, &QTimer::timeout, this, &MainWindow::EnsureTrayIconVisible);
+    tray_retry_timer_->start();
+    QTimer::singleShot(0, this, &MainWindow::EnsureTrayIconVisible);
+}
+
+void MainWindow::EnsureTrayIconVisible()
+{
+    if (tray_icon_ == nullptr || !QSystemTrayIcon::isSystemTrayAvailable()) {
+        return;
+    }
+
+    tray_icon_->setIcon(
+        call_is_in_process_ && !running_icon_.isNull() ? running_icon_ : default_icon_);
+    tray_icon_->setVisible(true);
     tray_icon_->show();
+}
+
+void MainWindow::HideToTray()
+{
+    EnsureTrayIconVisible();
+    hide();
+}
+
+void MainWindow::ExitApplication()
+{
+    exit_requested_ = true;
+    StopTest();
+    if (tray_retry_timer_ != nullptr) {
+        tray_retry_timer_->stop();
+    }
+    if (tray_icon_ != nullptr) {
+        tray_icon_->hide();
+    }
+    QApplication::quit();
 }
 
 void MainWindow::PopulateRecentMenu()
@@ -633,7 +894,7 @@ void MainWindow::MinimizedApplication()
         return;
     }
 
-    setWindowState(Qt::WindowMinimized);
+    HideToTray();
 }
 
 #if defined(Q_OS_WIN)
@@ -647,7 +908,21 @@ bool MainWindow::nativeEvent(const QByteArray& eventType, void* message, long* r
     Q_UNUSED(result)
 
     const auto* msg = static_cast<MSG*>(message);
-    if (msg == nullptr || msg->message != WM_WTSSESSION_CHANGE) {
+    if (msg == nullptr) {
+        return false;
+    }
+
+    if (taskbar_created_message_ != 0 && msg->message == taskbar_created_message_) {
+        QTimer::singleShot(250, this, [this]() {
+            if (tray_icon_ != nullptr) {
+                tray_icon_->hide();
+            }
+            EnsureTrayIconVisible();
+        });
+        return false;
+    }
+
+    if (msg->message != WM_WTSSESSION_CHANGE) {
         return false;
     }
 
@@ -668,19 +943,24 @@ bool MainWindow::nativeEvent(const QByteArray& eventType, void* message, long* r
 
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-    if (tray_icon_ != nullptr && tray_icon_->isVisible()) {
-        hide();
+    if (!exit_requested_) {
+        HideToTray();
         event->ignore();
         return;
     }
+
+    StopTest();
     QMainWindow::closeEvent(event);
 }
 
 void MainWindow::changeEvent(QEvent* event)
 {
-    if (event->type() == QEvent::WindowStateChange && isMinimized() && tray_icon_ != nullptr) {
-        hide();
-        tray_icon_->show();
+    if (event->type() == QEvent::WindowStateChange && isMinimized() && !exit_requested_) {
+        QTimer::singleShot(0, this, [this]() {
+            if (!exit_requested_) {
+                HideToTray();
+            }
+        });
     } else if (event->type() == QEvent::ActivationChange && isActiveWindow()) {
         ScheduleFocusRepaint();
     }

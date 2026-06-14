@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/icons">
+    <file>SkipAdClicker.ico</file>
+    <file>SkipAdClicker_ON.ico</file>
+  </qresource>
+</RCC>

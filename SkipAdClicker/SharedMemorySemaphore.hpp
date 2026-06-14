@@ -1,7 +1,11 @@
 // SharedMemorySemaphore.hpp
 #pragma once
 
+#ifdef _WIN32
+using SharedSemaphoreHandle = void*;
+#else
 #include <semaphore.h>
+#endif
 
 #include <cstdint>
 #include <stop_token>
@@ -47,24 +51,32 @@ public:
     void Trigger();
     void Close();
 private:
+#ifndef _WIN32
     struct SharedSemaphoreState
     {
         sem_t semaphore;
         std::uint32_t initialized;
     };
+#endif
 
     static std::string BuildName(const std::string& processName);
     void StopThreadToWait();
     void StartThreadToWait();
+#ifndef _WIN32
     bool MapSharedMemory(int fd);
     bool WaitUntilInitialized(int timeoutMs) const;
+#endif
     bool WaitForSignal(int timeoutMs);
     void RealWait(std::stop_token stoken);
 
 private:
     std::string name_;
+#ifdef _WIN32
+    SharedSemaphoreHandle semaphore_ = nullptr;
+#else
     int shm_fd_ = -1;
     SharedSemaphoreState* state_ = nullptr;
+#endif
     MainWindow * mainWin = nullptr;
     std::jthread *  waiting_thread = nullptr;
 };
