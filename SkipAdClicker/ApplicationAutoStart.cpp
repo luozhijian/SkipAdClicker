@@ -1,4 +1,5 @@
 #include "ApplicationAutoStart.hpp"
+#include "LogView.hpp"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -8,8 +9,13 @@
 #include <QStandardPaths>
 #include <QString>
 
+#include <vector>
+
 #if defined(Q_OS_WIN)
-#include <QSettings>
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
 #endif
 
 #if defined(Q_OS_MACOS)
@@ -68,11 +74,29 @@ bool RemoveFile(const QString& file_path, QString* error_message)
 }
 
 #if defined(Q_OS_WIN)
-QSettings WindowsRunSettings()
+constexpr auto kWindowsRunKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+constexpr auto kWindowsRunValue = L"SkipAdClicker";
+
+QString WindowsErrorMessage(LSTATUS status)
 {
-    return QSettings(
-        "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
-        QSettings::NativeFormat);
+    wchar_t* message = nullptr;
+    const auto length = FormatMessageW(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER
+            | FORMAT_MESSAGE_FROM_SYSTEM
+            | FORMAT_MESSAGE_IGNORE_INSERTS,
+        nullptr,
+        static_cast<DWORD>(status),
+        0,
+        reinterpret_cast<wchar_t*>(&message),
+        0,
+        nullptr);
+    const auto result = length != 0 && message != nullptr
+        ? QString::fromWCharArray(message, static_cast<qsizetype>(length)).trimmed()
+        : QString("Windows error %1").arg(status);
+    if (message != nullptr) {
+        LocalFree(message);
+    }
+    return result;
 }
 
 QString WindowsStartupCommand()
@@ -86,37 +110,118 @@ QString WindowsStartupCommand()
 
 bool IsPlatformRegistrationEnabled()
 {
-    auto run_settings = WindowsRunSettings();
-    if (!run_settings.contains(kApplicationName)) {
+    HKEY run_key = nullptr;
+    const auto open_status = RegOpenKeyExW(
+        HKEY_CURRENT_USER,
+        kWindowsRunKey,
+        0,
+        KEY_QUERY_VALUE,
+        &run_key);
+    if (open_status != ERROR_SUCCESS) {
         return false;
     }
 
-    const auto expected_command = WindowsStartupCommand();
-    if (!expected_command.isEmpty()
-        && run_settings.value(kApplicationName).toString() != expected_command) {
-        run_settings.setValue(kApplicationName, expected_command);
-        run_settings.sync();
-    }
-    return run_settings.status() == QSettings::NoError;
+    const auto query_status = RegQueryValueExW(
+        run_key,
+        kWindowsRunValue,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr);
+    RegCloseKey(run_key);
+    return query_status == ERROR_SUCCESS;
 }
 
 bool UpdatePlatformRegistration(bool enabled, QString* error_message)
 {
-    auto run_settings = WindowsRunSettings();
+    HKEY run_key = nullptr;
+    const auto open_status = RegCreateKeyExW(
+        HKEY_CURRENT_USER,
+        kWindowsRunKey,
+        0,
+        nullptr,
+        REG_OPTION_NON_VOLATILE,
+        KEY_SET_VALUE | KEY_QUERY_VALUE,
+        nullptr,
+        &run_key,
+        nullptr);
+    if (open_status != ERROR_SUCCESS) {
+        return Fail(
+            error_message,
+            QString("Could not open the Windows startup registry key: %1")
+                .arg(WindowsErrorMessage(open_status)));
+    }
 
+    LSTATUS update_status = ERROR_SUCCESS;
     if (enabled) {
         const auto command = WindowsStartupCommand();
         if (command.isEmpty()) {
+            RegCloseKey(run_key);
             return Fail(error_message, "Could not determine the Windows startup command.");
         }
-        run_settings.setValue(kApplicationName, command);
-    } else {
-        run_settings.remove(kApplicationName);
-    }
 
-    run_settings.sync();
-    if (run_settings.status() != QSettings::NoError) {
-        return Fail(error_message, "Could not update the Windows startup registry.");
+        const auto command_utf16 = command.toStdWString();
+        update_status = RegSetValueExW(
+            run_key,
+            kWindowsRunValue,
+            0,
+            REG_SZ,
+            reinterpret_cast<const BYTE*>(command_utf16.c_str()),
+            static_cast<DWORD>((command_utf16.size() + 1) * sizeof(wchar_t)));
+        if (update_status != ERROR_SUCCESS) {
+            RegCloseKey(run_key);
+            return Fail(
+                error_message,
+                QString("RegSetValueExW failed: %1")
+                    .arg(WindowsErrorMessage(update_status)));
+        }
+
+        DWORD value_type = 0;
+        DWORD value_size = 0;
+        auto verify_status = RegQueryValueExW(
+            run_key,
+            kWindowsRunValue,
+            nullptr,
+            &value_type,
+            nullptr,
+            &value_size);
+        std::vector<wchar_t> stored_value;
+        if (verify_status == ERROR_SUCCESS && value_type == REG_SZ && value_size > 0) {
+            stored_value.resize((value_size / sizeof(wchar_t)) + 1);
+            verify_status = RegQueryValueExW(
+                run_key,
+                kWindowsRunValue,
+                nullptr,
+                &value_type,
+                reinterpret_cast<BYTE*>(stored_value.data()),
+                &value_size);
+        }
+        if (verify_status != ERROR_SUCCESS
+            || value_type != REG_SZ
+            || QString::fromWCharArray(stored_value.data()) != command) {
+            RegCloseKey(run_key);
+            return Fail(
+                error_message,
+                verify_status == ERROR_SUCCESS
+                    ? "The Windows startup registry value did not match after it was written."
+                    : QString("Could not verify the Windows startup registry value: %1")
+                          .arg(WindowsErrorMessage(verify_status)));
+        }
+
+        LogView::AddLog(QString("Run at Startup: ") + kApplicationName + QString(" ") + command);
+    } else {
+        update_status = RegDeleteValueW(run_key, kWindowsRunValue);
+        if (update_status == ERROR_FILE_NOT_FOUND) {
+            update_status = ERROR_SUCCESS;
+        }
+    }
+    RegCloseKey(run_key);
+
+    if (update_status != ERROR_SUCCESS) {
+        return Fail(
+            error_message,
+            QString("Could not update the Windows startup registry: %1")
+                .arg(WindowsErrorMessage(update_status)));
     }
     return true;
 }

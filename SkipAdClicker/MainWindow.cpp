@@ -16,7 +16,6 @@
 #include <QCoreApplication>
 #include <QCursor>
 #include <QDir>
-#include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QImage>
@@ -35,12 +34,7 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
-#include <appmodel.h>
-#include <shlobj.h>
-#include <shobjidl.h>
 #include <wtsapi32.h>
-
-#include <vector>
 #endif
 
 #if defined(__linux__)
@@ -152,140 +146,6 @@ void RequestX11Activation(WId window_id)
     XSync(display, False);
     XSetErrorHandler(previous_error_handler);
     XCloseDisplay(display);
-}
-#endif
-
-#if defined(Q_OS_WIN)
-constexpr auto kWindowsStartupShortcutName = "SkipAdClicker.lnk";
-
-QString WindowsPackageFamilyName()
-{
-    UINT32 family_name_length = 0;
-    if (GetCurrentPackageFamilyName(&family_name_length, nullptr) != ERROR_INSUFFICIENT_BUFFER
-        || family_name_length == 0) {
-        return {};
-    }
-
-    std::vector<wchar_t> family_name(family_name_length);
-    if (GetCurrentPackageFamilyName(&family_name_length, family_name.data()) != ERROR_SUCCESS) {
-        return {};
-    }
-    return QString::fromWCharArray(family_name.data());
-}
-
-QString WindowsStartupShortcutPath()
-{
-    PWSTR startup_path = nullptr;
-    const auto result = SHGetKnownFolderPath(FOLDERID_Startup, KF_FLAG_CREATE, nullptr, &startup_path);
-    if (FAILED(result) || startup_path == nullptr) {
-        if (startup_path != nullptr) {
-            CoTaskMemFree(startup_path);
-        }
-        return {};
-    }
-
-    const auto path = QDir(QString::fromWCharArray(startup_path))
-                          .absoluteFilePath(kWindowsStartupShortcutName);
-    CoTaskMemFree(startup_path);
-    return path;
-}
-
-bool IsPackagedWindowsStartupTaskEnabled()
-{
-    if (WindowsPackageFamilyName().isEmpty()) {
-        return false;
-    }
-    const auto shortcut_path = WindowsStartupShortcutPath();
-    return !shortcut_path.isEmpty() && QFileInfo::exists(shortcut_path);
-}
-
-bool SetPackagedWindowsStartupTaskEnabled(bool enabled, QString* error_message)
-{
-    const auto shortcut_path = WindowsStartupShortcutPath();
-    if (shortcut_path.isEmpty()) {
-        if (error_message != nullptr) {
-            *error_message = "Could not locate the current user's Windows Startup folder.";
-        }
-        return false;
-    }
-
-    if (!enabled) {
-        if (!QFileInfo::exists(shortcut_path) || QFile::remove(shortcut_path)) {
-            return true;
-        }
-        if (error_message != nullptr) {
-            *error_message = QString("Could not remove startup shortcut: %1").arg(shortcut_path);
-        }
-        return false;
-    }
-
-    const auto package_family_name = WindowsPackageFamilyName();
-    if (package_family_name.isEmpty()) {
-        if (error_message != nullptr) {
-            *error_message = "Could not determine the installed Windows package identity.";
-        }
-        return false;
-    }
-
-    const auto explorer_path = QDir::toNativeSeparators(
-        QDir(qEnvironmentVariable("WINDIR", "C:\\Windows")).absoluteFilePath("explorer.exe"));
-    const auto arguments = QString("shell:AppsFolder\\%1!App").arg(package_family_name);
-
-    const auto initialize_result = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-    const bool uninitialize_com = SUCCEEDED(initialize_result);
-    if (FAILED(initialize_result) && initialize_result != RPC_E_CHANGED_MODE) {
-        if (error_message != nullptr) {
-            *error_message = "Could not initialize Windows shortcut support.";
-        }
-        return false;
-    }
-
-    IShellLinkW* shell_link = nullptr;
-    auto result = CoCreateInstance(
-        CLSID_ShellLink,
-        nullptr,
-        CLSCTX_INPROC_SERVER,
-        IID_PPV_ARGS(&shell_link));
-    if (SUCCEEDED(result)) {
-        result = shell_link->SetPath(
-            reinterpret_cast<LPCWSTR>(explorer_path.utf16()));
-    }
-    if (SUCCEEDED(result)) {
-        result = shell_link->SetArguments(
-            reinterpret_cast<LPCWSTR>(arguments.utf16()));
-    }
-    if (SUCCEEDED(result)) {
-        result = shell_link->SetDescription(L"Start SkipAdClicker after Windows sign-in");
-    }
-
-    IPersistFile* persist_file = nullptr;
-    if (SUCCEEDED(result)) {
-        result = shell_link->QueryInterface(IID_PPV_ARGS(&persist_file));
-    }
-    if (SUCCEEDED(result)) {
-        result = persist_file->Save(
-            reinterpret_cast<LPCWSTR>(shortcut_path.utf16()),
-            TRUE);
-    }
-
-    if (persist_file != nullptr) {
-        persist_file->Release();
-    }
-    if (shell_link != nullptr) {
-        shell_link->Release();
-    }
-    if (uninitialize_com) {
-        CoUninitialize();
-    }
-
-    if (FAILED(result)) {
-        if (error_message != nullptr) {
-            *error_message = QString("Could not create startup shortcut (0x%1).")
-                                 .arg(static_cast<qulonglong>(result), 8, 16, QLatin1Char('0'));
-        }
-        return false;
-    }
-    return true;
 }
 #endif
 
@@ -545,15 +405,7 @@ bool MainWindow::SetStartAfterRestartEnabled(bool enabled)
 {
     QString error_message;
     bool update_succeeded = false;
-#if defined(Q_OS_WIN)
-    if (!WindowsPackageFamilyName().isEmpty()) {
-        update_succeeded = SetPackagedWindowsStartupTaskEnabled(enabled, &error_message);
-    } else {
-        update_succeeded = ApplicationAutoStart::SetEnabled(enabled, &error_message);
-    }
-#else
     update_succeeded = ApplicationAutoStart::SetEnabled(enabled, &error_message);
-#endif
 
     if (!update_succeeded) {
         const QSignalBlocker blocker(start_after_restart_action_);
@@ -576,13 +428,8 @@ bool MainWindow::SetStartAfterRestartEnabled(bool enabled)
 
 bool MainWindow::IsStartAfterRestartEnabled() const
 {
-#if defined(Q_OS_WIN)
-    if (!WindowsPackageFamilyName().isEmpty()) {
-        return IsPackagedWindowsStartupTaskEnabled();
-    }
-#endif
     return ApplicationAutoStart::IsEnabled();
-}
+ }
 
 void MainWindow::PromptForAutoStartOnFirstRun()
 {

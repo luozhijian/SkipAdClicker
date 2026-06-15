@@ -69,7 +69,7 @@ if(AUTOMATIOTEST_QT_DBUS_TARGET)
 endif()
 
 if(WIN32)
-    target_link_libraries(SkipAdClicker PRIVATE user32 gdi32 wtsapi32 shell32 ole32)
+    target_link_libraries(SkipAdClicker PRIVATE user32 gdi32 wtsapi32 advapi32)
 endif()
 
 if(WIN32)
