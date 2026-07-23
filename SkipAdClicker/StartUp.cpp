@@ -1,6 +1,7 @@
 #include "StartUp.hpp"
 
 #include "FullScreenControls.hpp"
+#include "BrowserApplicationsSettings.hpp"
 #include "LogView.hpp"
 #include "RecentFiles.hpp"
 #include "Services/ApplicationService.hpp"
@@ -20,6 +21,7 @@
 #include "../Utilities/Services/VariableService.hpp"
 #include "../Utilities/Status/LoadFunctions.hpp"
 #include "../UserInterfaceLib/SkipAdDetector.hpp"
+#include "../Utilities/OSRelated/OSRelatedFunctions.hpp"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -137,6 +139,10 @@ void StartUp::InitializeApplication()
     testbooklib::SetVariableService(&variable_service);
     utilities::GlobalSetting::current_running_folder = QCoreApplication::applicationDirPath().toStdString();
     ConfigureLogging();
+    QString browser_settings_error;
+    if (!BrowserApplicationsSettings::MergeWithInstalledDefaults(&browser_settings_error)) {
+        LogView::AddLog( browser_settings_error );
+    }
     utilities::GlobalSetting::tesseract_engine_data_folder = ResolvePath(ReadSetting("TesseractEngineDataFolder").toString());
     utilities::GlobalSetting::tesseract_engine_language = ReadSetting("TesseractEngineLanguage", "eng").toString().toStdString();
     utilities::GlobalSetting::SetImageFileFolder(ResolveWritablePath(ReadSetting("DebugImagesLocation").toString()));
@@ -153,12 +159,15 @@ void StartUp::RegisterDefaultActionBindings()
         return;
     }
 
+    automationtest::utilities::logViewFuncPtr = LogView::AddLogFromStdString;
     auto& load_functions = utilities::status::LoadFunctions::Instance();
     playtestbook::services::StaticFunctionService::Instance().RegisterDefaultFunctions();
     services::ApplicationService::RegisterBindings(load_functions);
     services::ChromeService::RegisterBindings(load_functions);
+    BrowserApplicationsSettings::RegisterBindings(load_functions);
     FullScreenControls::RegisterBindings(load_functions);
     userinterfacelib::SkipAdDetector::RegisterBindings(load_functions);
+	OSRelatedFunctions::RegisterBindings(load_functions);
     registered = true;
 }
 

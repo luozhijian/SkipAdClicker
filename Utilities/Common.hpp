@@ -10,6 +10,8 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <functional>
+#include <unordered_set>
 
 namespace automationtest::utilities {
 
@@ -22,6 +24,9 @@ namespace automationtest::utilities {
 		Rectangle rectangle {};
 		std::string text {};
 	};
+
+
+	extern std::function<void(std::string&)> logViewFuncPtr;
 
 	std::optional<bool> AnyToBool(const std::any& value);
 	std::optional<int> AnyToInt(const std::any& value);
@@ -38,6 +43,15 @@ namespace automationtest::utilities {
 	static bool StoreTrue() noexcept;
 	static bool StoreFalse() noexcept;
 	static double StoreValue(double value) noexcept;
+	static bool LogStringVector(const std::string& hints, const std::vector<std::string>& values);
+	static bool LogStringVectorPointer(const std::string& hints, const std::vector<std::string>* values);
+	static bool LogWStringVectorPointer(const std::string& hints, const std::vector<std::wstring>* values);
+	static bool LogWStringVectorPointer(const std::string& hints, const std::unordered_set<std::wstring>* values);
+	static bool LogWStringSetPointer(const std::string& hints, const std::unordered_set<std::wstring>* values);
+
+
+	static bool LogString(const std::string& hints, const std::string& value);
+	static bool LogBool(const std::string& hints, bool value);
 
     static void ThrowException(const std::any& value);
 	void RegisterBindings(utilities::status::LoadFunctions& load_functions);

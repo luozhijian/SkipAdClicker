@@ -75,3 +75,4 @@ obj/
 *.nupkg
 *.vsix
 WindowsScript/Artifacts/
+/secret_key.txt

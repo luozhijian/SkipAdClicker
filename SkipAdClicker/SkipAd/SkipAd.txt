@@ -5,8 +5,14 @@ $Endlessloop=StoreTrue
 $SecondsDelay=StoreValue 1.0
 $LoopTotalSeconds=StoreValue -1 
 $StopAtCountOfError=StoreValue 30
+$browers=GetBrowserApplications
+LogWStringSetPointer ListOfBrowserApplications $browers
 
 WhileLoop $Endlessloop $SecondsDelay $LoopTotalSeconds OnErrorCountContinuousErrorStopAtMax  $StopAtCountOfError
+	$browserVisible=IsBrowserVisible $browers
+	LogBool FindBrowser $browserVisible
+	IfCondition not $browserVisible
+		continue
 
 	$screens=TakeFullScreenshot
 	ClickOnSkipAd $screens Special_SettingLineDetectionSkipAd

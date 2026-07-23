@@ -17,9 +17,8 @@
 	  "ThresholdMaxValue": 0
   },
 
-   
   "SettingCanny" :{
-	  "Threshold1": 90,
+	  "Threshold1": 60,
 	  "Threshold2": 150,
 	  "ApertureSize":  3,
 	  "L2gradient": true

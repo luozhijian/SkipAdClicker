@@ -2,7 +2,7 @@
 param(
     [Parameter()]
     [ValidateNotNullOrEmpty()]
-    [string]$Version = "1.0.33.0",
+    [string]$Version = "1.0.35.0",
 
     [Parameter()]
     [switch]$SkipBuild,

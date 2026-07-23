@@ -6,11 +6,15 @@
 #include <QPixmap>
 #include <QGuiApplication>
 #include <QClipboard>
+#include <QDir>
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QMetaObject>
 #include <QPushButton>
+#include <QSettings>
 #include <QStandardItem>
 #include <QThread>
 #include <QVBoxLayout>
@@ -35,6 +39,62 @@ QList<QPixmap> CaptureScreenshots(const QList<QScreen*>& screens)
     return screenshots;
 }
 
+void SaveScreenshotAsBitmap(QWidget* parent, const QPixmap& screenshot, int index)
+{
+    if (screenshot.isNull()) {
+        return;
+    }
+
+    QSettings settings;
+    const QString last_folder = settings.value("LastScreenshotSaveFolder").toString();
+    const QString default_file_name = QString("Screenshot_%1.bmp").arg(index + 1);
+    const QString default_file_path = last_folder.isEmpty()
+        ? default_file_name
+        : QDir(last_folder).filePath(default_file_name);
+
+    QString file_name = QFileDialog::getSaveFileName(
+        parent,
+        "Save Screenshot",
+        default_file_path,
+        "Bitmap Files (*.bmp)");
+    if (file_name.isEmpty()) {
+        return;
+    }
+
+    if (QFileInfo(file_name).suffix().isEmpty()) {
+        file_name += ".bmp";
+    }
+
+    if (!screenshot.save(file_name, "BMP")) {
+        QMessageBox::warning(
+            parent,
+            "Save Screenshot",
+            QString("Could not save screenshot to:\n%1").arg(file_name));
+        return;
+    }
+
+    settings.setValue("LastScreenshotSaveFolder", QFileInfo(file_name).absolutePath());
+}
+
+void ShowScreenshotCopiedMessage(QWidget* parent, const QList<QPixmap>& screenshots, int index)
+{
+    QMessageBox message_box(parent);
+    message_box.setIcon(QMessageBox::Information);
+    message_box.setWindowTitle("Screenshot copied");
+    message_box.setText(QString("Screenshot %1 of %2 is now on the clipboard. Paste it, then click OK to copy the next monitor screenshot.")
+            .arg(index + 1)
+            .arg(screenshots.size()));
+
+    auto* ok_button = message_box.addButton(QMessageBox::Ok);
+    auto* save_button = message_box.addButton("Save as File", QMessageBox::ActionRole);
+    message_box.setDefaultButton(ok_button);
+    message_box.exec();
+
+    if (message_box.clickedButton() == save_button) {
+        SaveScreenshotAsBitmap(parent, screenshots[index], index);
+    }
+}
+
 int CopyScreenshotsToClipboard(QWidget* parent, const QList<QPixmap>& screenshots)
 {
     auto* clipboard = QApplication::clipboard();
@@ -43,18 +103,11 @@ int CopyScreenshotsToClipboard(QWidget* parent, const QList<QPixmap>& screenshot
     }
 
     int copied_count = 0;
-    for (int index = 0; index < screenshots.size(); ++index) {
+    for (int index = 0; index < screenshots.size(); index++) {
         clipboard->setPixmap(screenshots[index], QClipboard::Clipboard);
         ++copied_count;
 
-        if (screenshots.size() > 1 && index + 1 < screenshots.size()) {
-            QMessageBox::information(
-                parent,
-                "Screenshot copied",
-                QString("Screenshot %1 of %2 is now on the clipboard. Paste it, then click OK to copy the next monitor screenshot.")
-                    .arg(index + 1)
-                    .arg(screenshots.size()));
-        }
+        ShowScreenshotCopiedMessage(parent, screenshots, index);
     }
 
     return copied_count;
@@ -181,6 +234,24 @@ void LogView::EnsureModel()
     model_ = new QStandardItemModel();
     model_->setColumnCount(2);
     model_->setHorizontalHeaderLabels({"Time", "Log"});
+}
+
+void LogView::AddLogFromStdString(const std::string& message)
+{
+    AddLog(QString::fromStdString(message));        
+}
+
+void LogView::AddLogFromCharPointer(const char* message)
+{
+    AddLog(QString::fromUtf8(message));        
+}
+
+static void AddLog(const char* message)
+{
+	if (message == nullptr) {
+		return;
+	}
+	LogView::AddLog(QString::fromUtf8(message));    
 }
 
 void LogView::AddLog(const QString& message)

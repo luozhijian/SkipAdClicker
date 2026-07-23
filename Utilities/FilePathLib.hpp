@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <filesystem>
 
 namespace automationtest::utilities {
 
@@ -22,8 +23,16 @@ public:
     static std::string GenerateOutputResult(const std::string& filename, const std::string& prefix);
     static void MoveFilesWithPrefix(const std::string& source_folder, const std::string& destination_folder, const std::string& prefix);
     static bool SafeSaveToFile(const std::string& file_path, const std::string& content);
+    static void SaveToFile(const std::string& file_path, const std::string& content);
     static std::vector<std::string> FindFilesEndingWith(const std::string& folder_path, const std::string& search_string);
     static std::string AddParentPath(const std::string& filename, const std::string& parent_path);
+
+
+    static std::filesystem::path DebugFilePath(const std::string& prefix, const std::string& suffix);
+    static std::filesystem::path DebugImageFilePath(const std::string& prefix);
+    static std::filesystem::path DebugJsonFilePath(const std::string& prefix);
+
+
 };
 
 } // namespace automationtest::utilities

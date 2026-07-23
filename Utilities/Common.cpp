@@ -5,9 +5,34 @@
 #include <sstream>
 
 #include "./Exceptions/TestException.hpp"
+#include "./Exceptions/TestContinueException.hpp"
+#include "./Types/AnyCast.hpp"
+#include "../Utilities/StringLib.hpp"
+
+using automationtest::utilities::StringLib;
+
+
+#define RegisterBindings_two_parameters(n, f, T, p1, p2)   \
+load_functions.RegisterMethod(n, RegisteredMethod{  \
+    .declaring_type = n,    \
+    .invoke = [](const std::vector<std::any>& list) -> std::any {    \
+        auto x = std::any_cast<std::string>( list[0] ) ;  \
+        auto y = std::any_cast<T>( list[1] ) ;  \
+         return f(x, y);   \
+    },    \
+    .parameters = {   \
+        Parameter {.name = p1},   \
+        Parameter {.name = p2},   \
+    },  \
+    });
 
 namespace automationtest::utilities
 {
+    using Parameter = automationtest::utilities::status::LoadFunctions::RegisteredParameter;
+
+	std::function<void(std::string&)> logViewFuncPtr = nullptr;
+
+
     void RegisterBindings(utilities::status::LoadFunctions& load_functions)
     {
         using RegisteredMethod = utilities::status::LoadFunctions::RegisteredMethod;
@@ -52,6 +77,83 @@ namespace automationtest::utilities
                 }},
             },
         });
+
+
+        load_functions.RegisterMethod("Continue", RegisteredMethod{
+            .declaring_type = "Continue",
+            .invoke = [](const std::vector<std::any>&) -> std::any {
+                automationtest::utilities::exceptions::TestContinueException::ThrowTestContinueException();
+                return {};
+            },
+            });
+
+
+        load_functions.RegisterMethod("LogStringVector", RegisteredMethod{
+            .declaring_type = "LogStringVector",
+            .invoke = [](const std::vector<std::any>& list) -> std::any {
+                auto [x, y] = automationtest::utilities::types::AnyCast::CastTwo<const std::string, const std::vector<std::string>&>(list,  "LogStringVector");
+                 return LogStringVector(x, y);
+            },
+            .parameters = {
+                Parameter {.name = "hints"},
+                Parameter {.name = "values"},
+            },
+            });
+
+        load_functions.RegisterMethod("LogStringVectorPointer", RegisteredMethod{
+            .declaring_type = "LogStringVectorPointer",
+            .invoke = [](const std::vector<std::any>& list) -> std::any {
+                auto [x, y] = automationtest::utilities::types::AnyCast::CastTwo<std::string, std::vector<std::string>*>(list,  "LogStringVectorPointer");
+                 return LogStringVectorPointer (x, y);
+            },
+            .parameters = {
+                Parameter {.name = "hints"},
+                Parameter {.name = "values"},
+            },
+            });
+
+
+        //load_functions.RegisterMethod("LogString", RegisteredMethod{
+        //    .declaring_type = "LogString",
+        //    .invoke = [](const std::vector<std::any>& list) -> std::any {
+        //        auto [x, y] = automationtest::utilities::types::AnyCast::CastTwo<std::string, std::string>(list,  "LogString");
+        //        return LogString(x, y);
+        //    },
+        //    .parameters = {
+        //        Parameter {.name = "hints"},
+        //        Parameter {.name = "value"},
+        //    },
+        //    });
+
+        RegisterBindings_two_parameters("LogString", LogString, std::string, "hints", "value")
+        
+        //RegisterBindings_two_parameters("LogWStringSetPointer", LogWStringSetPointer, const std::unordered_set<std::wstring>*, "hints", "value")
+
+
+        load_functions.RegisterMethod("LogWStringSetPointer", RegisteredMethod{
+            .declaring_type = "LogWStringSetPointer",
+            .invoke = [](const std::vector<std::any>& list) -> std::any {
+                auto x = std::any_cast<std::string>(list[0]);
+                auto y = std::any_cast<std::unordered_set<std::wstring>*>(list[1]);
+                return LogWStringSetPointer(x, y);
+            },
+            .parameters = {
+                Parameter {.name = "hints"},
+                Parameter {.name = "values"},
+            },
+                });
+
+         load_functions.RegisterMethod("LogBool", RegisteredMethod{
+            .declaring_type = "LogBool",
+            .invoke = [](const std::vector<std::any>& list) -> std::any {
+                auto [x, y] = automationtest::utilities::types::AnyCast::CastTwo<std::string, bool>(list,  "LogBool");
+                return LogBool(x, y);
+            },
+            .parameters = {
+                Parameter {.name = "hints"},
+                Parameter {.name = "value"},
+            },
+            });
     }
 
 
@@ -69,6 +171,59 @@ namespace automationtest::utilities
     {
         return value;
     }
+
+    bool LogStringVectorPointer(const std::string& hints, const std::vector<std::string>* values)
+    {
+        if (logViewFuncPtr) {
+            auto message = hints + StringLib::JoinWith<const std::vector<std::string>, std::string>(*values, ",");
+            logViewFuncPtr( message);
+        }
+        return true;    
+    }
+
+
+    static bool LogWStringVectorPointer(const std::string& hints, const std::vector<std::wstring>* values)
+    {
+        if (logViewFuncPtr) {
+            auto message = hints + StringLib::JoinWith<const std::vector<std::wstring>, std::wstring>(*values, ",");
+            logViewFuncPtr(message);
+        }
+        return true;
+    }
+
+    static bool LogWStringSetPointer(const std::string& hints, const std::unordered_set<std::wstring>* values)
+    {
+        if (logViewFuncPtr) {
+            auto message = hints + ": " + StringLib::JoinWith<const std::unordered_set<std::wstring>, std::wstring>(*values, ", ");
+            logViewFuncPtr(message);
+        }
+        return true;
+    }
+
+    bool LogStringVector(const std::string& hints, const std::vector<std::string>& values)
+    {
+        if (logViewFuncPtr) {
+            auto message = hints + StringLib::JoinWith<const std::vector<std::string>, std::string>(values, ",");
+            logViewFuncPtr(message);
+        }
+        return true;
+    }
+
+    bool LogString(const std::string& hints, const std::string& value)
+    {
+		if (logViewFuncPtr) {
+			std::string message = hints + ": " + value;
+			logViewFuncPtr(message);
+		}
+        return true;
+    }
+
+    static bool LogBool(const std::string& hints, bool value)
+    {
+        return LogString(hints, value ? "True" : "False");
+    }
+
+    static bool LogBool(const std::string& hints, bool b);
 
 
     std::optional<bool> AnyToBool(const std::any& value)

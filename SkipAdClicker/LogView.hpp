@@ -28,6 +28,8 @@ public:
     explicit LogView(QWidget* parent = nullptr);
 
     static void AddLog(const QString& message);
+    static void AddLogFromStdString(const std::string& message);
+    static void AddLogFromCharPointer(const char* message);
 
 private:
     static void EnsureModel();

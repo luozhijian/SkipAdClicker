@@ -69,7 +69,7 @@ if(AUTOMATIOTEST_QT_DBUS_TARGET)
 endif()
 
 if(WIN32)
-    target_link_libraries(SkipAdClicker PRIVATE user32 gdi32 wtsapi32 advapi32)
+    target_link_libraries(SkipAdClicker PRIVATE user32 gdi32 wtsapi32 advapi32 taskschd ole32 oleaut32)
 endif()
 
 if(WIN32)
@@ -77,21 +77,35 @@ if(WIN32)
         WIN32_EXECUTABLE TRUE
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/x64/$<CONFIG>"
     )
+    set(AUTOMATIOTEST_BROWSER_APPLICATIONS_INI
+        "${CMAKE_CURRENT_SOURCE_DIR}/BrowserApplications.Windows.ini")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set_target_properties(SkipAdClicker PROPERTIES
         OUTPUT_NAME "skipadclicker"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     )
-else()
+    set(AUTOMATIOTEST_BROWSER_APPLICATIONS_INI
+        "${CMAKE_CURRENT_SOURCE_DIR}/BrowserApplications.Linux.ini")
+elseif(APPLE)
     set_target_properties(SkipAdClicker PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     )
+    set(AUTOMATIOTEST_BROWSER_APPLICATIONS_INI
+        "${CMAKE_CURRENT_SOURCE_DIR}/BrowserApplications.macOS.ini")
+else()
+    message(FATAL_ERROR "SkipAdClicker has no BrowserApplications.ini template for ${CMAKE_SYSTEM_NAME}")
 endif()
 
 add_custom_command(TARGET SkipAdClicker POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_CURRENT_SOURCE_DIR}/SkipAd"
-        "$<TARGET_FILE_DIR:SkipAdClicker>/SkipAd"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tessdata"
+        "$<TARGET_FILE_DIR:SkipAdClicker>/tessdata"
+	COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/SkipAd/Settings"
+        "$<TARGET_FILE_DIR:SkipAdClicker>/SkipAd/Settings"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/SkipAd/SkipAd.txt"
+        "$<TARGET_FILE_DIR:SkipAdClicker>/SkipAd/SkipAd.txt"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/SkipAdClicker.ico"
         "$<TARGET_FILE_DIR:SkipAdClicker>/SkipAdClicker.ico"
@@ -101,6 +115,9 @@ add_custom_command(TARGET SkipAdClicker POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/SkipAdClicker.ini"
         "$<TARGET_FILE_DIR:SkipAdClicker>/SkipAdClicker.ini"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${AUTOMATIOTEST_BROWSER_APPLICATIONS_INI}"
+        "$<TARGET_FILE_DIR:SkipAdClicker>/BrowserApplications.ini"
 )
 
 if(WIN32 AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.21)

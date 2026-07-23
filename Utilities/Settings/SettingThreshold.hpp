@@ -6,7 +6,7 @@
 namespace automationtest::utilities::settings {
 
 struct SettingThreshold {
-    std::string apply_threshold {};
+    std::string apply_threshold { "" };
     int threshold_value {0};
     int threshold_max_value {0};
 };

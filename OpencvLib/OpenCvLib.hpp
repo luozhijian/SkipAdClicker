@@ -29,8 +29,8 @@ public:
     static std::string DebugSaveMatAsBitmapFile(const cv::Mat& mat);
     static std::string InfoSaveMatAsBitmapFile(const cv::Mat& mat);
     static std::string SaveMatAsBitmapFile(const cv::Mat& mat, const std::string& filename);
-    static cv::Mat ApplyApplyThresholdReturnRawIfFailed(const cv::Mat& mat, const automationtest::utilities::settings::SettingLoadMatGray& gray);
-    static cv::Mat ApplyApplyThresholdReturnRawIfFailed(const cv::Mat& mat, const automationtest::utilities::settings::SettingThreshold& threshold);
+    static cv::Mat ApplyThresholdReturnRawIfFailed(const cv::Mat& mat, const automationtest::utilities::settings::SettingLoadMatGray& gray);
+    static cv::Mat ApplyThresholdReturnRawIfFailed(const cv::Mat& mat, const automationtest::utilities::settings::SettingThreshold& threshold);
     static cv::Mat ApplyCannyReturnRawIfFailed(const cv::Mat& mat, bool apply_canny, double canny_threshold1, double canny_threshold2);
     static std::vector<automationtest::utilities::LineWithDescription> FindLines(const cv::Mat& img, int min_len = 100, int max_gap = 2);
     static std::vector<automationtest::utilities::LineWithDescription> FindLines(const automationtest::utilities::Bitmap& image, const automationtest::utilities::settings::SettingLineDetection& setting);
@@ -44,13 +44,15 @@ public:
     static std::vector<automationtest::utilities::Rectangle> FindTextBlocksFromGray(const cv::Mat& gray, const automationtest::utilities::settings::SettingCanny& canny_setting, int min_width, float text_block_threshold = 0.3F);
     static std::pair<int, float> VerifySameCodeAndGetTheColor(const cv::Mat& gray, const std::vector<automationtest::utilities::Point>& points);
     static cv::Mat FilterMatByColor(const cv::Mat& gray, int color, int delta);
+    static std::string SerializeAsJson(std::vector<std::vector<cv::Point>> contours);
 };
 
 } // namespace automationtest::opencvlib
 
 using Bitmap = automationtest::utilities::Bitmap;
 
-void DM(const cv::Mat& mat);
-void DB(const Bitmap& bp);
+std::string DM(const cv::Mat& mat);
+std::string DB(const Bitmap& bp);
+const char* DP(std::vector<std::vector<cv::Point>>& contours);
 
 #endif // AUTOMATIOTEST_OPENCVLIB_OPENCVLIB_HPP

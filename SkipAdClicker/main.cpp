@@ -117,6 +117,7 @@ int main(int argc, char* argv[])
         std::cout << "Another instance is already running, this instance will stop" << std::endl;
         return 0;
     }
+
     QApplication app(argc, argv);
     QApplication::setApplicationName("SkipAdClicker");
     QApplication::setOrganizationName("SkipAdClicker");

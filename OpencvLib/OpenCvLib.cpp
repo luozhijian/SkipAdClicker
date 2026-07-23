@@ -11,6 +11,9 @@
 #include "../Utilities/Logger.hpp"
 #include "../Utilities/GlobalSetting.hpp"
 #include "../Utilities/IdGenerator.hpp"
+#include "../Utilities/PointHelper.hpp"
+#include "../Utilities/OSRelated/OSRelatedFunctions.hpp"
+#include "../Utilities/FilePathLib.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -18,10 +21,13 @@
 #include <cstdlib>
 #include <exception>
 #include <filesystem>
+#include <fstream>
 #include <limits>
 #include <optional>
 #include <set>
+#include <sstream>
 #include <string>
+
 
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
@@ -43,8 +49,6 @@ using automationtest::utilities::settings::SettingLoadMatGray;
 using automationtest::utilities::settings::SettingRectangleDetection;
 using automationtest::utilities::settings::SettingThreshold;
 using automationtest::utilities::types::ShortLine;
-
-namespace {
 
 std::string NormalizeThresholdName(std::string value)
 {
@@ -159,8 +163,6 @@ std::vector<LineWithDescription> HoughLinesToDescriptions(const std::vector<cv::
     return result;
 }
 
-} // namespace
-
 cv::Mat OpenCvLib::ToGrayMat(const Bitmap& bitmap)
 {
     const auto source = MatExtension::BitmapToMat(bitmap);
@@ -238,16 +240,16 @@ std::string OpenCvLib::SaveMatAsBitmapFile(const cv::Mat& mat, const std::string
     }
 }
 
-cv::Mat OpenCvLib::ApplyApplyThresholdReturnRawIfFailed(const cv::Mat& mat, const SettingLoadMatGray& gray)
+cv::Mat OpenCvLib::ApplyThresholdReturnRawIfFailed(const cv::Mat& mat, const SettingLoadMatGray& gray)
 {
     SettingThreshold threshold {};
     threshold.apply_threshold = gray.apply_threshold;
     threshold.threshold_value = gray.threshold_value;
     threshold.threshold_max_value = gray.threshold_max_value;
-    return ApplyApplyThresholdReturnRawIfFailed(mat, threshold);
+    return ApplyThresholdReturnRawIfFailed(mat, threshold);
 }
 
-cv::Mat OpenCvLib::ApplyApplyThresholdReturnRawIfFailed(const cv::Mat& mat, const SettingThreshold& threshold)
+cv::Mat OpenCvLib::ApplyThresholdReturnRawIfFailed(const cv::Mat& mat, const SettingThreshold& threshold)
 {
     if (mat.empty()) {
         return {};
@@ -260,7 +262,7 @@ cv::Mat OpenCvLib::ApplyApplyThresholdReturnRawIfFailed(const cv::Mat& mat, cons
     }
 
     if (mat.channels() == 1) {
-        return mat.clone();
+        return mat;  //retrun it self
     }
 
     cv::Mat gray {};
@@ -302,7 +304,7 @@ std::vector<LineWithDescription> OpenCvLib::FindLines(const cv::Mat& img, int mi
 std::vector<LineWithDescription> OpenCvLib::FindLines(const Bitmap& image, const SettingLineDetection& setting)
 {
     const auto gray = ToGrayMat(image);
-    auto intermediate = ApplyApplyThresholdReturnRawIfFailed(gray, setting.setting_threshold);
+    auto intermediate = ApplyThresholdReturnRawIfFailed(gray, setting.setting_threshold);
     intermediate = ApplyCannyEffect(intermediate, setting.setting_canny);
     return FindLines(intermediate, setting.hough_lines_min_line_length, setting.hough_lines_max_line_gap);
 }
@@ -459,7 +461,7 @@ std::vector<TriangleWithDescription> OpenCvLib::FindTriangles(const cv::Mat& can
         std::vector<cv::Point> approx {};
         const auto epsilon = std::max(cv::arcLength(contour, true) * 0.05, 6.0);
         cv::approxPolyDP(contour, approx, epsilon, true);
-        if (approx.size() != 3 || cv::contourArea(approx) <= 90.0) {
+        if (approx.size() != 3 || cv::contourArea(approx) <= 50.0) {
             continue;
         }
 
@@ -503,16 +505,17 @@ std::vector<TriangleWithDescription> OpenCvLib::FindSmallTriangles(const Bitmap&
     return triangles;
 }
 
+
 std::pair<int, float> OpenCvLib::VerifySameCodeAndGetTheColor(const cv::Mat& gray, const std::vector<Point>& points)
 {
     if (gray.empty() || points.size() < 3) {
-        return {0, 0.0F};
+        return { 0, 0.0F };
     }
 
-    int min_x = std::min({points[0].x, points[1].x, points[2].x});
-    int max_x = std::max({points[0].x, points[1].x, points[2].x});
-    int min_y = std::min({points[0].y, points[1].y, points[2].y});
-    int max_y = std::max({points[0].y, points[1].y, points[2].y});
+    int min_x = std::min({ points[0].x, points[1].x, points[2].x });
+    int max_x = std::max({ points[0].x, points[1].x, points[2].x });
+    int min_y = std::min({ points[0].y, points[1].y, points[2].y });
+    int max_y = std::max({ points[0].y, points[1].y, points[2].y });
     min_x = std::max(0, min_x);
     min_y = std::max(0, min_y);
     max_x = std::min(gray.cols - 1, max_x);
@@ -522,7 +525,7 @@ std::pair<int, float> OpenCvLib::VerifySameCodeAndGetTheColor(const cv::Mat& gra
     int total = 0;
     for (int row = min_y; row <= max_y; ++row) {
         for (int col = min_x; col <= max_x; ++col) {
-            if (!PointInTriangle(Point {col, row}, points)) {
+            if (!PointInTriangle(Point{ col, row }, points)) {
                 continue;
             }
             ++histogram[MatExtension::GetByteValue(gray, row, col)];
@@ -531,12 +534,40 @@ std::pair<int, float> OpenCvLib::VerifySameCodeAndGetTheColor(const cv::Mat& gra
     }
 
     if (total == 0) {
-        return {0, 0.0F};
+        return { 0, 0.0F };
     }
 
     const auto group = MathLib::GetMostConcentratedGroup(histogram);
-    return {static_cast<int>(group.weighted_avg), group.total_count / static_cast<float>(total)};
+    double weighted_avg = group.weighted_avg;
+    double ratio = group.total_count / static_cast<double>(total);
+	//if (ratio < 0.8) {
+	//	return { 0, 0.0F };
+	//}
+
+ //   int delta = 30;
+ //   int count_of_black = 0;
+ //   std::uint8_t lower = (weighted_avg - delta) < 0 ? 0 : (weighted_avg - delta);
+ //   std::uint8_t upper = (weighted_avg + delta) >= 255 ? 255 : (weighted_avg + delta);
+
+ //   for (int row = min_y; row <= max_y; ++row) {
+ //       for (int col = min_x; col <= max_x; ++col) {
+ //           if (PointInTriangle(Point{ col, row }, points)) {
+ //               continue;
+ //           }
+ //           std::uint8_t  v= MatExtension::GetByteValue(gray, row, col);
+ //           if (v < lower || v > upper) {
+ //               count_of_black += 1;
+ //           }
+ //       }
+ //   }
+	//double area = (max_x - min_x + 1) * (max_y - min_y + 1);
+	//if (count_of_black / area >0.15) {
+	//	return { 0, 0.0F };
+	//}
+    return { (int)weighted_avg, ratio };
 }
+
+
 
 std::vector<Rectangle> OpenCvLib::FindTextBlocksFromGray(const cv::Mat& gray, const SettingCanny& canny_setting, int min_width, float text_block_threshold)
 {
@@ -617,107 +648,78 @@ cv::Mat OpenCvLib::FilterMatByColor(const cv::Mat& gray, int color, int delta)
     return lower_limited;
 }
 
+
+std::string OpenCvLib::SerializeAsJson(std::vector<std::vector<cv::Point>> contours)
+{
+    std::ostringstream json;
+    json << '[';
+    for (std::size_t contour_index = 0; contour_index < contours.size(); ++contour_index) {
+        if (contour_index > 0) {
+            json << ',';
+        }
+
+        json << '[';
+        const auto& contour = contours[contour_index];
+        for (std::size_t point_index = 0; point_index < contour.size(); ++point_index) {
+            if (point_index > 0) {
+                json << ',';
+            }
+
+            json << "{\"x\":" << contour[point_index].x
+                << ",\"y\":" << contour[point_index].y
+                << '}';
+        }
+        json << "]\n";
+    }
+    json << ']';
+    return json.str();
+}
+
 } // namespace automationtest::opencvlib
 
-namespace {
 
-#if defined(_WIN32)
-std::string ShellQuote(const std::string& value)
-{
-    std::string result {"\""};
-    for (const char ch : value) {
-        if (ch == '"') {
-            result += "\\\"";
-        } else {
-            result += ch;
-        }
-    }
-    result += '"';
-    return result;
-}
-#else
-std::string ShellQuote(const std::string& value)
-{
-    std::string result {"'"};
-    for (const char ch : value) {
-        if (ch == '\'') {
-            result += "'\\''";
-        } else {
-            result += ch;
-        }
-    }
-    result += '\'';
-    return result;
-}
-#endif
-
-std::filesystem::path DebugImageFilePath(const std::string& prefix)
-{
-    std::filesystem::path folder(automationtest::utilities::GlobalSetting::DebugViewImageFileFolder());
-    if (folder.empty()) {
-        folder = std::filesystem::current_path();
-    }
-    return folder / (prefix + "_" + automationtest::utilities::IdGenerator::IdWithDateTime() + ".bmp");
-}
-
-void StartBitmapViewer(const std::string& filename, const std::string& log_category)
-{
-    const auto tool = automationtest::utilities::GlobalSetting::ToolsToViewBitmap();
-    std::string command;
-
-#if defined(_WIN32)
-    if (tool.empty()) {
-        command = "start \"\" " + ShellQuote(filename);
-    } else {
-        command = "start \"\" " + ShellQuote(tool) + " " + ShellQuote(filename);
-    }
-#elif defined(__APPLE__)
-    if (tool.empty()) {
-        command = "open " + ShellQuote(filename) + " >/dev/null 2>&1 &";
-    } else {
-        command = ShellQuote(tool) + " " + ShellQuote(filename) + " >/dev/null 2>&1 &";
-    }
-#else
-    if (tool.empty()) {
-        command = "xdg-open " + ShellQuote(filename) + " >/dev/null 2>&1 &";
-    } else {
-        command = ShellQuote(tool) + " " + ShellQuote(filename) + " >/dev/null 2>&1 &";
-    }
-#endif
-
-    const int result = std::system(command.c_str());
-    if (result != 0) {
-        automationtest::utilities::Logger::Error("Failed to start bitmap viewer for " + filename, log_category);
-    }
-}
-
-} // namespace
-
-void DM(const cv::Mat& mat)
+std::string DM(const cv::Mat& mat)
 {
     if (mat.empty()) {
         automationtest::utilities::Logger::Error("Cannot display an empty cv::Mat.", "DM");
-        return;
+        return {};
     }
 
-    const auto filename = DebugImageFilePath("DM").string();
+    const auto filename = automationtest::utilities::FilePathLib::DebugImageFilePath("DM").string();
     const auto saved_file = automationtest::opencvlib::OpenCvLib::SaveMatAsBitmapFile(mat, filename);
     if (saved_file.empty()) {
         automationtest::utilities::Logger::Error("Failed to save debug cv::Mat bitmap.", "DM");
-        return;
+        return {};
     }
 
     StartBitmapViewer(saved_file, "DM");
+    return filename;
 }
 
-void DB(const Bitmap& bp)
+std::string DB(const Bitmap& bp)
 {
-    const auto filename = DebugImageFilePath("DB").string();
+    const auto filename = automationtest::utilities::FilePathLib::DebugImageFilePath("DB").string();
     const auto saved_file = automationtest::utilities::BitmapHelper::SaveBitmapFile(bp, filename);
     if (saved_file.empty()) {
         automationtest::utilities::Logger::Error("Failed to save debug Bitmap.", "DB");
-        return;
+        return {};
     }
 
     StartBitmapViewer(saved_file, "DB");
+
+    return filename;
+}
+
+const char* DP(std::vector<std::vector<cv::Point>>& contours)
+{
+    static std::string message;
+    const auto filename = automationtest::utilities::FilePathLib::DebugJsonFilePath("Contours").string();
+    try {
+        automationtest::utilities::FilePathLib::SaveToFile(filename, automationtest::opencvlib::OpenCvLib::SerializeAsJson(contours));
+        message = filename;
+    } catch (const std::exception& ex) {
+        message= std::string(ex.what()) + " " + filename;
+    }
+
+    return message.c_str();
 }

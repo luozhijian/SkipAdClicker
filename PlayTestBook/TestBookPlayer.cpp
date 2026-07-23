@@ -133,7 +133,7 @@ void TestBookPlayer::PlayOneActionWithoutBlock(testbooklib::TestAction& action)
     } catch (const TestException&) {
         throw;
     } catch (const std::exception& exception) {
-        throw TestException("When process " + action.action_text + "\n" + exception.what());
+        throw TestException("When process " + action.action_text + " " + exception.what());
     }
 }
 

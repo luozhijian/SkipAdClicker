@@ -16,10 +16,6 @@ int OpenCvTypeForChannels(int channels)
 
 } // namespace
 
-std::uint8_t MatExtension::GetByteValue(const cv::Mat& mat, int row, int col, int channel)
-{
-    return mat.ptr<std::uint8_t>(row)[col * mat.channels() + channel];
-}
 
 void MatExtension::SetByteValue(cv::Mat& mat, int row, int col, std::uint8_t value, int channel)
 {

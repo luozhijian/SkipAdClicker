@@ -2,14 +2,52 @@
 #define AUTOMATIOTEST_STRINGLIB_HPP
 
 #include <cstdint>
+#include <codecvt>
+#include <locale>
 #include <optional>
+#include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
+#include <cwctype>
 
 namespace automationtest::utilities {
 
+
+
 class StringLib {
 public:
+
+    // Works for list or containers of strings, numbers, or any printable type
+    template <typename T, typename T2>
+    static std::string JoinWith(T& container, const std::string& delimiter) {
+        std::ostringstream oss;
+        bool isFirst = true;
+
+        // The range-based for loop style you requested
+        for (const T2& item : container) {
+            if (!isFirst) {
+                oss << delimiter; // Adds delimiter BEFORE all items except the first
+            }
+
+            if constexpr (std::is_same_v<std::remove_cv_t<T2>, std::wstring>) {
+                oss << std::wstring_convert<std::codecvt_utf8<wchar_t>> {}.to_bytes(item);
+            }
+            else {
+                oss << item;
+            }
+            isFirst = false;      // Changes flag so next items get a delimiter
+        }
+
+        return oss.str();
+    }
+
+    static std::string Trim(std::string text);
+    static std::string ToLower(const std::string& value);
+    static std::wstring ToLower(std::wstring value);
+    static std::string JoinFragments(const std::vector<std::optional<std::string>>& fragments);
+    static int CountOverlaps(const std::string& str1, const std::string& str2);
+
     static std::string SetStringAsEmpty();
     static std::string StoreString(const std::string& value);
     static bool StringCompareFirstLessThanOrEqualSecond(const std::string& first, const std::string& second) noexcept;

@@ -1,6 +1,8 @@
 #include "FilePathLib.hpp"
 
 #include "IdGenerator.hpp"
+#include "Logger.hpp"
+#include "GlobalSetting.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -153,6 +155,14 @@ bool FilePathLib::SafeSaveToFile(const std::string& file_path, const std::string
     }
 }
 
+void FilePathLib::SaveToFile(const std::string& file_path, const std::string& content)
+{
+ 
+    std::ofstream stream(file_path, std::ios::app | std::ios::binary);
+    stream << content;
+}
+
+
 std::vector<std::string> FilePathLib::FindFilesEndingWith(const std::string& folder_path, const std::string& search_string)
 {
     std::vector<std::string> result;
@@ -182,5 +192,36 @@ std::string FilePathLib::AddParentPath(const std::string& filename, const std::s
 
     return (fs::path(parent_path) / input).lexically_normal().string();
 }
+
+
+
+    std::filesystem::path FilePathLib::DebugFilePath(const std::string& prefix, const std::string& suffix)
+    {
+        std::filesystem::path folder(automationtest::utilities::GlobalSetting::DebugViewImageFileFolder());
+        if (folder.empty()) {
+            folder = std::filesystem::current_path();
+        }
+        return folder / (prefix + "_" + automationtest::utilities::IdGenerator::IdWithDateTime() + suffix);
+    }
+
+    std::filesystem::path FilePathLib::DebugImageFilePath(const std::string& prefix)
+    {
+        std::filesystem::path folder(automationtest::utilities::GlobalSetting::DebugViewImageFileFolder());
+        if (folder.empty()) {
+            folder = std::filesystem::current_path();
+        }
+        return DebugFilePath(prefix, ".bmp");
+    }
+
+    std::filesystem::path FilePathLib::DebugJsonFilePath(const std::string& prefix)
+    {
+        std::filesystem::path folder(automationtest::utilities::GlobalSetting::DebugViewImageFileFolder());
+        if (folder.empty()) {
+            folder = std::filesystem::current_path();
+        }
+        return DebugFilePath(prefix, ".json");
+    }
+
+
 
 } // namespace automationtest::utilities

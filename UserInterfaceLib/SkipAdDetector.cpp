@@ -9,6 +9,8 @@
 #include "../Utilities/PointHelper.hpp"
 #include "../Utilities/RectangleHelper.hpp"
 #include "../Utilities/Logger.hpp"
+#include "../OcrLib/OcrProcesser.hpp"
+#include "../Utilities/StringLib.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -32,6 +34,7 @@ using automationtest::utilities::TriangleWithDescription;
 using automationtest::utilities::exceptions::TestException;
 using automationtest::utilities::settings::SettingCanny;
 using automationtest::utilities::settings::SettingLineDetection;
+using automationtest::utilities::StringLib;
 
 namespace {
 
@@ -192,7 +195,21 @@ Rectangle ExpandSkipAdToSmallRectangleWord(const cv::Mat& image, const TriangleW
         return {};
     }
 
-    const Rectangle candidate {x, y, covered.width * 4 - 2, covered.height + 4};
+    const Rectangle candidate {x, y, covered.width * 4 - 2, covered.height + 6};
+    return Intersect(ImageRectangle(image), candidate);
+}
+
+
+Rectangle ExpandSkipAdToSmallRectangleWord_And_SkipAd(const cv::Mat& image, const TriangleWithDescription& triangle)
+{
+    const auto covered = triangle.GetCoveredRectangle();
+    const int x = covered.Left() - static_cast<int>(covered.width * 4);
+    const int y = covered.Top() - 2;
+    if (x < 0 || y < 0) {
+        return {};
+    }
+
+    const Rectangle candidate{ x, y, covered.width * 5.5, covered.height + 4 };
     return Intersect(ImageRectangle(image), candidate);
 }
 
@@ -317,10 +334,16 @@ bool VerifySkipAdWordPart(const cv::Mat& gray, const SettingCanny& canny_setting
     if (rect.IsEmpty()) {
         return false;
     }
-
+    // theoritically, it is seasier to use canny result to check text block
+    // but here, I think in future to check the text use OCR, in that case, the canny result is not great
     const auto cropped = CropMat(gray, rect);
     const auto filtered = OpenCvLib::FilterMatByColor(cropped, color, delta);
-	return ContainsTextBlockFromGray(filtered, canny_setting, rect.height, 0.4F);
+	//bool b_have_text_block = ContainsTextBlockFromGray(filtered, canny_setting, rect.height, 0.4F);
+    auto ocr_result = automationtest::ocrlib::OcrProcesser::TryOcrOneLineFromMat(filtered);
+    
+	int count = StringLib::CountOverlaps(ocr_result, "skipad");
+
+    return count>=2;
 }
 
 bool IsBoundColorBlack(const cv::Mat& gray, const TriangleWithDescription& triangle)
@@ -339,27 +362,86 @@ bool IsBoundColorBlack(const cv::Mat& gray, const TriangleWithDescription& trian
     return color <= 50 && coverage >= 0.5F;
 }
 
+bool  VerfiyTriangleIsSolidAndContainedByBlack(const cv::Mat& gray, const TriangleWithDescription& triangle, int color)
+{
+    Rectangle rect_raw = triangle.GetCoveredRectangle();
+    Rectangle rect(rect_raw.x, rect_raw.y - 2, rect_raw.width + 1, rect_raw.height + 4);
+    const auto cropped_raw = CropMat(gray, rect);
+    const auto cropped = OpenCvLib::FilterMatByColor(cropped_raw, color, 25);
+    int width = rect_raw.width + 1;
+    int height = rect_raw.height + 4;
+    cv::Point p1(5, 0);
+    cv::Point p2(width-1, 0);
+    cv::Point p3(width - 1 , height / 2 - 2);
+
+    const auto vertices = std::vector<cv::Point>{ p1, p2, p3};
+
+    cv::Mat triangleMask = cv::Mat::zeros(cropped.size(), CV_8UC1);
+    cv::fillConvexPoly(triangleMask, vertices, cv::Scalar(255));
+
+    cv::Mat filledPixels;
+    cv::bitwise_and(cropped, triangleMask, filledPixels);
+
+    const double triangleArea = cv::countNonZero(triangleMask);
+    const double foregroundArea = cv::countNonZero(filledPixels);
+    const double fillRatio = foregroundArea / triangleArea;
+
+    bool isSolidTriangle_black = fillRatio < 0.1;
+    if (!isSolidTriangle_black) {
+        return false;
+    }
+
+    cv::Point p4(  5, height -1);
+    cv::Point p5( width -1, height - 1);
+    cv::Point p6( width -1 , height / 2 + 3);
+
+    const auto vertices_2 = std::vector<cv::Point>{ p4, p5, p6, p4 };
+
+    cv::Mat triangleMask_2 = cv::Mat::zeros(cropped.size(), CV_8UC1);
+    cv::fillConvexPoly(triangleMask_2, vertices_2, cv::Scalar(255));
+
+    cv::Mat filledPixels_2;
+    cv::bitwise_and(cropped, triangleMask_2, filledPixels_2);
+
+    const double triangleArea_2 = cv::countNonZero(triangleMask_2);
+    const double foregroundArea_2 = cv::countNonZero(filledPixels_2);
+    const double fillRatio_2 = foregroundArea_2 / triangleArea_2;
+
+    return fillRatio_2 < 0.1;
+}
+
+
 bool VerifySkipAdByColor(const cv::Mat& gray, const TriangleWithDescription& triangle, const SettingCanny& canny_setting)
 {
     const auto [color, coverage] = OpenCvLib::VerifySameCodeAndGetTheColor(gray, triangle.AsArray());
     if (coverage < 0.8F) {
         return false;
     }
+
     if (!VerifySkipAdBarPart(gray, triangle, color)) {
         return false;
     }
-    if (!VerifySkipAdWordPart(gray, canny_setting, triangle, color, 10)) {
+
+    if (!VerifySkipAdWordPart(gray, canny_setting, triangle, color, 20)) {
         return false;
     }
+
+    if (!VerfiyTriangleIsSolidAndContainedByBlack(gray, triangle, color)) {
+        return false;
+    }
+
     return true;
 }
+
+
 
 bool VerifySkipAd(const cv::Mat& gray, const cv::Mat& canny, const TriangleWithDescription& triangle, const SettingCanny& canny_setting)
 {
     if (!VerifySkipAdByColor(gray, triangle, canny_setting)) {
         return false;
     }
-    return SkipAdDetector::VerifyNearCorner(canny, triangle);
+    //return SkipAdDetector::VerifyNearCorner(gray, canny, triangle);
+    return true;
 }
 
 std::vector<TriangleWithDescription> FindSkipAdInGray(
@@ -404,9 +486,10 @@ std::optional<TriangleWithDescription> FindFirstSkipAdInGray(
     if (gray.empty()) {
         return std::nullopt;
     }
-
+    cv::Mat eroded;
+    cv::erode(gray, eroded, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)), cv::Point(-1, -1), 1);
     const auto canny = OpenCvLib::ApplyCannyReturnRawIfFailed(
-        gray,
+        eroded,
         true,
         line_detection.setting_canny.threshold1,
         line_detection.setting_canny.threshold2);
@@ -508,6 +591,7 @@ std::optional<Bitmap> SkipAdDetector::ClickOnSkipAd(const std::vector<LocatedBit
         }
 
         const auto gray = BitmapRegionToGrayMat(image, Rectangle {0, 0, image.width, image.height});
+		//const auto gray = OpenCvLib::ApplyThresholdReturnRawIfFailed(raw_gray, line_detection.setting_threshold);
         const auto triangle = FindFirstSkipAdInGray(gray, line_detection);
         if (!triangle.has_value()) {
             continue;
@@ -522,7 +606,7 @@ std::optional<Bitmap> SkipAdDetector::ClickOnSkipAd(const std::vector<LocatedBit
     return std::nullopt;
 }
 
-bool SkipAdDetector::VerifyNearCorner(const cv::Mat& cannied, const TriangleWithDescription& triangle, int kernel_w, int kernel_h)
+bool SkipAdDetector::VerifyNearCorner(const cv::Mat& gray, const cv::Mat& cannied, const TriangleWithDescription& triangle, int kernel_w, int kernel_h)
 {
     const auto rect = triangle.GetCoveredRectangle();
     if (rect.IsEmpty() || cannied.empty()) {
@@ -562,7 +646,8 @@ bool SkipAdDetector::VerifyNearCorner(const cv::Mat& cannied, const TriangleWith
         if (!near_right) {
             const int top_from = std::max(center.y - height * 15, 1);
             const Rectangle roi {right_range_from, top_from, right_range_to - right_range_from, center.y - top_from + height};
-            const auto cropped = CropMat(cannied, Intersect(ImageRectangle(cannied), roi));
+            const auto cropped_1 = CropMat(gray, Intersect(ImageRectangle(gray), roi));
+			const auto cropped = OpenCvLib::FilterMatByColor(cropped_1, 250, 5);
             if (!cropped.empty()) {
                 near_right = StripeDetector::DetectIfStripExists(cropped, 7, std::min(300, std::max(1, cropped.rows - height)));
             }
@@ -586,7 +671,8 @@ bool SkipAdDetector::VerifyNearCorner(const cv::Mat& cannied, const TriangleWith
         if (!near_bottom) {
             const int left_from = std::max(center.x - height * 20, 1);
             const Rectangle roi {left_from, y_range_from, center.x - left_from, y_range_to - y_range_from};
-            const auto cropped = CropMat(cannied, Intersect(ImageRectangle(cannied), roi));
+            const auto cropped_1 = CropMat(gray, Intersect(ImageRectangle(gray), roi));
+            const auto cropped = OpenCvLib::FilterMatByColor(cropped_1, 250, 5);
             if (!cropped.empty()) {
                 near_bottom = StripeDetector::DetectIfStripExists(cropped, std::min(300, std::max(1, cropped.cols - height)), 7);
             }

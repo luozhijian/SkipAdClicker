@@ -4,12 +4,24 @@
 #include <cctype>
 #include <iomanip>
 #include <sstream>
+#include <unordered_map>
+
 
 namespace automationtest::utilities {
 
-namespace {
+ 
+std::string StringLib::Trim(std::string text)
+{
+    const auto is_not_space = [](unsigned char character) {
+        return !std::isspace(character);
+        };
 
-std::string ToLower(const std::string& value)
+    text.erase(text.begin(), std::find_if(text.begin(), text.end(), is_not_space));
+    text.erase(std::find_if(text.rbegin(), text.rend(), is_not_space).base(), text.end());
+    return text;
+}
+
+std::string StringLib::ToLower(const std::string& value)
 {
     std::string result(value);
     std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c) {
@@ -18,7 +30,15 @@ std::string ToLower(const std::string& value)
     return result;
 }
 
-std::string JoinFragments(const std::vector<std::optional<std::string>>& fragments)
+std::wstring StringLib::ToLower(std::wstring value)
+{
+    std::transform(value.begin(), value.end(), value.begin(), [](wchar_t character) {
+        return static_cast<wchar_t>(std::towlower(character));
+        });
+    return value;
+}
+
+std::string StringLib::JoinFragments(const std::vector<std::optional<std::string>>& fragments)
 {
     std::string result;
     for (const auto& fragment : fragments) {
@@ -36,7 +56,7 @@ bool HasNoFragments(const std::vector<std::optional<std::string>>& fragments)
     });
 }
 
-} // namespace
+ 
 
 std::string StringLib::SetStringAsEmpty()
 {
@@ -192,5 +212,24 @@ bool StringLib::StartsWithAfterTrim(const std::string& s, char ch)
     // check if next character is '#'
     return i < s.size() && s[i] == ch;
 }
+
+ 
+
+int StringLib::CountOverlaps(const std::string& str1, const std::string& str2) {
+    std::unordered_map<char, int> counts1;
+    std::unordered_map<char, int> counts2;
+
+    for (char c : str1) counts1[c]++;
+    for (char c : str2) counts2[c]++;
+
+    int overlap = 0;
+    for (const auto& [ch, count] : counts1) {
+        if (counts2.count(ch)) {
+            overlap += std::min(count, counts2[ch]);
+        }
+    }
+    return overlap;
+}
+
 
 } // namespace automationtest::utilities

@@ -7,6 +7,7 @@ TestContinueException::TestContinueException()
 {
 }
 
+
 void TestContinueException::ThrowTestContinueException()
 {
     throw TestContinueException();

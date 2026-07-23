@@ -1,6 +1,8 @@
 #include "MainWindow.hpp"
 
 #include "ApplicationAutoStart.hpp"
+#include "BrowserApplicationsDialog.hpp"
+#include "BrowserApplicationsSettings.hpp"
 #include "RecentFiles.hpp"
 #include "StartUp.hpp"
 #include "../Utilities/Exceptions/TestCancellingException.hpp"
@@ -385,11 +387,34 @@ void MainWindow::BuildMenus()
     });
 
     auto* settings_menu = menuBar()->addMenu("&Settings");
+    settings_menu->addAction("Edit Browser Applications", this, [this]() {
+        QString error_message;
+        const bool merge_succeeded = BrowserApplicationsSettings::MergeWithInstalledDefaults(&error_message);
+        const auto settings_path = BrowserApplicationsSettings::UserFilePath();
+        if (!merge_succeeded && !QFileInfo::exists(settings_path)) {
+            QMessageBox::warning(this, "SkipAdClicker", error_message);
+            return;
+        }
+        if (!merge_succeeded) {
+            QMessageBox::warning(
+                this,
+                "SkipAdClicker",
+                error_message + "\n\nThe existing settings will be shown so they can be corrected.");
+        }
+
+        BrowserApplicationsDialog dialog(this);
+        dialog.exec();
+    });
+    settings_menu->addSeparator();
     start_after_restart_action_ = settings_menu->addAction("Start Application After Restart");
     start_after_restart_action_->setCheckable(true);
     start_after_restart_action_->setChecked(IsStartAfterRestartEnabled());
     connect(start_after_restart_action_, &QAction::toggled, this, [this](bool enabled) {
         SetStartAfterRestartEnabled(enabled);
+    });
+    connect(settings_menu, &QMenu::aboutToShow, this, [this]() {
+        const QSignalBlocker blocker(start_after_restart_action_);
+        start_after_restart_action_->setChecked(IsStartAfterRestartEnabled());
     });
 
     minimized_when_started_action_ = settings_menu->addAction("Minimized when started");
@@ -421,7 +446,7 @@ bool MainWindow::SetStartAfterRestartEnabled(bool enabled)
 
     const QSignalBlocker restart_blocker(start_after_restart_action_);
     const QSignalBlocker minimized_blocker(minimized_when_started_action_);
-    start_after_restart_action_->setChecked(enabled);
+    start_after_restart_action_->setChecked(IsStartAfterRestartEnabled());
     minimized_when_started_action_->setChecked(enabled);
     return true;
 }
@@ -727,8 +752,11 @@ void MainWindow::ProcessCommandLine()
     PromptForAutoStartOnFirstRun();
  
     const auto startup_folder = StartUp::StartupFolder();
-    if (startup_folder.has_value() && QDir(QString::fromStdString(*startup_folder)).exists()) {
-        OpenOneFolder(QString::fromStdString(*startup_folder));
+    if ( startup_folder.has_value() ) {
+        if ( QDir(QString::fromStdString(startup_folder.value())).exists() )
+            OpenOneFolder(QString::fromStdString(startup_folder.value()));
+        else 
+			LogView::AddLog(QString("Startup folder does not exist: %1").arg(QString::fromStdString(startup_folder.value())));  
     }
 }
 

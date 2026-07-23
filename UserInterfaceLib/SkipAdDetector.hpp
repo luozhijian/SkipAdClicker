@@ -18,7 +18,7 @@ public:
     using LocatedBitmap = std::pair<Bitmap, automationtest::utilities::Point>;
     static void RegisterBindings(automationtest::utilities::status::LoadFunctions& load_functions);
     static std::any ClickOnSkipAd(const std::any& bitmaps, const std::any& line_detection);
-    static bool VerifyNearCorner(const cv::Mat& cannied, const automationtest::utilities::TriangleWithDescription& triangle, int kernel_w = 300, int kernel_h = 7);
+    static bool VerifyNearCorner(const cv::Mat& gray, const cv::Mat& cannied, const automationtest::utilities::TriangleWithDescription& triangle, int kernel_w = 300, int kernel_h = 7);
 
 private:
     static std::vector<automationtest::utilities::TriangleWithDescription> FindSkipAd(const Bitmap& image, const automationtest::utilities::settings::SettingLineDetection& line_detection = {});

@@ -94,7 +94,7 @@ ListOfMat ListOfMatHelper::LoadListOfImageAsGrayMat(const std::string& folder, c
         }
 
         if (mat_gray != nullptr) {
-            mat = OpenCvLib::ApplyApplyThresholdReturnRawIfFailed(mat, *mat_gray);
+            mat = OpenCvLib::ApplyThresholdReturnRawIfFailed(mat, *mat_gray);
         }
         result.mats.push_back(std::move(mat));
     }

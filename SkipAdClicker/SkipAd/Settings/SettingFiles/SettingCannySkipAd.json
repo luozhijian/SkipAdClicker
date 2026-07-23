@@ -1,7 +1,7 @@
 {
-	"$schema": "",
-	"__meta": {
-	"type":"SettingCanny",
+  "$schema": "",
+  "__meta": {
+    "type": "SettingCanny",
     "description": "Setting Find Canny",
     "version": "1.0",
     "created": "2025-08-24T12:00:00Z"
@@ -9,6 +9,13 @@
 
   "Threshold1": 90,
   "Threshold2": 150,
-  "ApertureSize":  3,
-  "L2gradient": true
+  "ApertureSize": 3,
+  "L2gradient": true,
+
+  "SettingThreshold": {
+    "ApplyThreshold": "None",
+    "ThresholdValue": 0,
+    "ThresholdMaxValue": 0
+  }
+
 }

@@ -94,6 +94,7 @@ SettingCanny ReadSettingCanny(const JsonValue& root)
     setting.threshold2 = GetInt(root, "Threshold2").value_or(setting.threshold2);
     setting.aperture_size = GetInt(root, "ApertureSize").value_or(setting.aperture_size);
     setting.l2_gradient = GetBool(root, "L2gradient").value_or(setting.l2_gradient);
+
     return setting;
 }
 

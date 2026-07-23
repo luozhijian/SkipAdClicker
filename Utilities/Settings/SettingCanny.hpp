@@ -1,5 +1,6 @@
 #ifndef AUTOMATIOTEST_SETTINGS_SETTINGCANNY_HPP
 #define AUTOMATIOTEST_SETTINGS_SETTINGCANNY_HPP
+#include "SettingThreshold.hpp"
 
 namespace automationtest::utilities::settings {
 

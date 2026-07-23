@@ -1,17 +1,27 @@
 file(GLOB_RECURSE AUTOMATIOTEST_UTILITY_HEADERS CONFIGURE_DEPENDS "*.hpp")
 file(GLOB_RECURSE AUTOMATIOTEST_UTILITY_SOURCES CONFIGURE_DEPENDS "*.cpp")
+list(FILTER AUTOMATIOTEST_UTILITY_SOURCES EXCLUDE REGEX "OSRelatedFunctions\\.(Windows|Linux|msOS)\\.cpp$")
+
+if(WIN32)
+    list(APPEND AUTOMATIOTEST_UTILITY_SOURCES "OSRelated/OSRelatedFunctions.Windows.cpp")
+elseif(APPLE)
+    enable_language(OBJCXX)
+    list(APPEND AUTOMATIOTEST_UTILITY_SOURCES "OSRelated/OSRelatedFunctions.msOS.cpp")
+    set_source_files_properties("OSRelated/OSRelatedFunctions.msOS.cpp" PROPERTIES LANGUAGE OBJCXX)
+elseif(UNIX)
+    list(APPEND AUTOMATIOTEST_UTILITY_SOURCES "OSRelated/OSRelatedFunctions.Linux.cpp")
+endif()
 
 add_library(AutomatioTestUtilities
     ${AUTOMATIOTEST_UTILITY_HEADERS}
-    ${AUTOMATIOTEST_UTILITY_SOURCES}
-)
+    ${AUTOMATIOTEST_UTILITY_SOURCES} "Types/AnyCast.cpp")
 
 target_include_directories(AutomatioTestUtilities PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(WIN32)
-    target_link_libraries(AutomatioTestUtilities PUBLIC user32 gdi32)
+    target_link_libraries(AutomatioTestUtilities PUBLIC user32 gdi32 dwmapi)
 elseif(APPLE)
-    target_link_libraries(AutomatioTestUtilities PUBLIC "-framework ApplicationServices")
+    target_link_libraries(AutomatioTestUtilities PUBLIC "-framework AppKit" "-framework ApplicationServices")
 elseif(UNIX)
     find_package(X11 REQUIRED)
     find_path(AUTOMATIOTEST_XTEST_INCLUDE_DIR X11/extensions/XTest.h)
@@ -21,4 +31,8 @@ elseif(UNIX)
     endif()
     target_include_directories(AutomatioTestUtilities PUBLIC ${X11_INCLUDE_DIR} ${AUTOMATIOTEST_XTEST_INCLUDE_DIR})
     target_link_libraries(AutomatioTestUtilities PUBLIC ${X11_LIBRARIES} ${AUTOMATIOTEST_XTEST_LIBRARY})
+    if(TARGET X11::Xinerama)
+        target_compile_definitions(AutomatioTestUtilities PRIVATE AUTOMATIOTEST_HAS_XINERAMA=1)
+        target_link_libraries(AutomatioTestUtilities PRIVATE X11::Xinerama)
+    endif()
 endif()
