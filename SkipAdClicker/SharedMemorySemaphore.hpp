@@ -3,6 +3,7 @@
 
 #ifdef _WIN32
 using SharedSemaphoreHandle = void*;
+using SharedMemoryHandle = void*;
 #else
 #include <semaphore.h>
 #endif
@@ -42,24 +43,31 @@ public:
     // Clear / remove shared memory semaphore
     void Clear();
     // Creator creates semaphore and waits for consumer trigger
-    void CreateForCreator(unsigned int initialValue = 0);
+    bool CreateForCreator(const std::string& version, unsigned int initialValue = 0);
     // Consumer opens existing semaphore
     void OpenForConsumer();
+    std::string RunningVersion() const;
     // Creator waits
     void Wait( MainWindow * mainWin);
      // Consumer triggers creator
     void Trigger();
+    void RequestQuit();
     void Close();
 private:
-#ifndef _WIN32
     struct SharedSemaphoreState
     {
+#ifndef _WIN32
         sem_t semaphore;
-        std::uint32_t initialized;
-    };
 #endif
+        std::uint32_t initialized;
+        std::uint32_t command;
+        char version[32];
+    };
 
     static std::string BuildName(const std::string& processName);
+    static std::string BuildStateName(const std::string& semaphoreName);
+    void SetCommand(std::uint32_t command);
+    void Signal();
     void StopThreadToWait();
     void StartThreadToWait();
 #ifndef _WIN32
@@ -73,6 +81,8 @@ private:
     std::string name_;
 #ifdef _WIN32
     SharedSemaphoreHandle semaphore_ = nullptr;
+    SharedMemoryHandle shared_memory_ = nullptr;
+    SharedSemaphoreState* state_ = nullptr;
 #else
     int shm_fd_ = -1;
     SharedSemaphoreState* state_ = nullptr;

@@ -235,6 +235,11 @@ void StartUp::SetAutoStartPromptShown()
     QSettings().setValue(kAutoStartPromptShownSetting, true);
 }
 
+std::string StartUp::VersionNumber()
+{
+    return AppSettings().value("VersionNumber", "0.0.0").toString().trimmed().toStdString();
+}
+
 QSettings StartUp::AppSettings()
 {
     const auto filename = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("SkipAdClicker.ini");

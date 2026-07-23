@@ -1,8 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter()]
-    [ValidateNotNullOrEmpty()]
-    [string]$Version = "1.0.35.0",
+    [string]$Version,
 
     [Parameter()]
     [switch]$SkipBuild,
@@ -375,6 +374,33 @@ Write-Host "SkipAdClicker was installed successfully." -ForegroundColor Green
     )
 }
 
+$repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+if ([string]::IsNullOrWhiteSpace($Version)) {
+    $settingsPath = Join-Path $repoRoot "SkipAdClicker\SkipAdClicker.ini"
+    if (-not (Test-Path -LiteralPath $settingsPath)) {
+        throw "Version was not specified and the application settings file was not found at '$settingsPath'."
+    }
+
+    $versionSetting = Get-Content -LiteralPath $settingsPath |
+        Where-Object { $_ -match '^\s*VersionNumber\s*=' } |
+        Select-Object -First 1
+    if (-not $versionSetting) {
+        throw "Version was not specified and VersionNumber was not found in '$settingsPath'."
+    }
+
+    $Version = ($versionSetting -replace '^\s*VersionNumber\s*=\s*', '').Trim()
+    if ($Version -notmatch '^\d+(?:\.\d+){0,3}$') {
+        throw "VersionNumber in '$settingsPath' must contain between one and four numeric parts."
+    }
+
+    $versionPartList = @($Version.Split('.'))
+    while ($versionPartList.Count -lt 4) {
+        $versionPartList += "0"
+    }
+    $Version = $versionPartList -join '.'
+    Write-Host "Using VersionNumber from SkipAdClicker.ini: $Version" -ForegroundColor Cyan
+}
+
 $parsedVersion = $null
 if (-not [version]::TryParse($Version, [ref]$parsedVersion) -or
     $Version -notmatch '^\d+\.\d+\.\d+\.\d+$') {
@@ -389,7 +415,6 @@ if ($versionParts[3] -ne 0) {
     throw "The fourth package version part must be zero for a Microsoft Store submission."
 }
 
-$repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 $windowsScriptRoot = Join-Path $repoRoot "WindowsScript"
 $manifestSource = Join-Path $windowsScriptRoot "Package.appxmanifest"
 $imageSource = Join-Path $windowsScriptRoot "Images"

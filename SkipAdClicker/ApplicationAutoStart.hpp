@@ -8,6 +8,7 @@ namespace automationtest::app {
 class ApplicationAutoStart {
 public:
     static bool IsEnabled();
+    static bool UsesCurrentApplication();
     static bool SetEnabled(bool enabled, QString* error_message = nullptr);
 };
 

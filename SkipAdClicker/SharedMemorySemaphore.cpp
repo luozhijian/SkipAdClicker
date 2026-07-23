@@ -15,6 +15,7 @@
 #include <unistd.h>
 #endif
 #include <thread>
+#include <algorithm>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -25,13 +26,15 @@
 #include  "MainWindow.hpp"
 #include  "../Utilities/Logger.hpp"
 #include  "../Utilities/OSRelated/SystemInfo.hpp"
+#include <QCoreApplication>
+#include <QMetaObject>
 namespace automationtest::app {
 
-#ifndef _WIN32
 namespace {
     constexpr std::uint32_t kInitializedMagic = 0x534d5348; // "SMSH"
+    constexpr std::uint32_t kCommandShow = 1;
+    constexpr std::uint32_t kCommandQuit = 2;
 }
-#endif
 
  SharedMemorySemaphore* g_SharedMemorySemaphore=nullptr;
     void ClearSharedMemorySemaphore()
@@ -147,7 +150,7 @@ namespace {
     }
 
     // Creator creates semaphore and ws for consumer trigger
-    void SharedMemorySemaphore::CreateForCreator(unsigned int initialValue)
+    bool SharedMemorySemaphore::CreateForCreator(const std::string& version, unsigned int initialValue)
     {
         std::cout <<  "CreateForCreator";
 
@@ -162,21 +165,42 @@ namespace {
         {
             automationtest::utilities::Logger::Error(
                 "CreateSemaphore failed in CreateForCreator(): " + name_);
+            return false;
         }
+        if (::GetLastError() == ERROR_ALREADY_EXISTS)
+        {
+            Close();
+            return false;
+        }
+
+        const auto stateName = BuildStateName(name_);
+        shared_memory_ = ::CreateFileMappingA(
+            INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0,
+            sizeof(SharedSemaphoreState), stateName.c_str());
+        if (shared_memory_ == nullptr)
+        {
+            automationtest::utilities::Logger::Error(
+                "CreateFileMapping failed in CreateForCreator(): " + stateName);
+            Close();
+            return false;
+        }
+        state_ = static_cast<SharedSemaphoreState*>(
+            ::MapViewOfFile(shared_memory_, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(SharedSemaphoreState)));
+        if (state_ == nullptr)
+        {
+            automationtest::utilities::Logger::Error(
+                "MapViewOfFile failed in CreateForCreator(): " + stateName);
+            Close();
+            return false;
+        }
+        std::memset(state_, 0, sizeof(SharedSemaphoreState));
+        std::strncpy(state_->version, version.c_str(), sizeof(state_->version) - 1);
+        state_->initialized = kInitializedMagic;
 #else
         shm_fd_ = shm_open(
             name_.c_str(),
             O_CREAT | O_EXCL | O_RDWR,
             0666);
-
-        if (shm_fd_ == -1 && errno == EEXIST)
-        {
-            Clear();
-            shm_fd_ = shm_open(
-                name_.c_str(),
-                O_CREAT | O_EXCL | O_RDWR,
-                0666);
-        }
 
         if (shm_fd_ == -1)
         {
@@ -184,7 +208,7 @@ namespace {
                 "shm_open failed in CreateForCreator(): " + name_ + " : " + std::string(std::strerror(errno)));
             std::cout <<    
                 "shm_open failed in CreateForCreator(): " + std::string(std::strerror(errno));
-            return;
+            return false;
         }
 
         if (ftruncate(shm_fd_, sizeof(SharedSemaphoreState)) == -1)
@@ -193,14 +217,14 @@ namespace {
                 "ftruncate failed in CreateForCreator(): " + name_ + " : " + std::string(std::strerror(errno)));
             Close();
             Clear();
-            return;
+            return false;
         }
 
         if (!MapSharedMemory(shm_fd_))
         {
             Close();
             Clear();
-            return;
+            return false;
         }
 
         std::memset(state_, 0, sizeof(SharedSemaphoreState));
@@ -210,11 +234,13 @@ namespace {
                 "sem_init failed in CreateForCreator(): " + name_ + " : " + std::string(std::strerror(errno)));
             Close();
             Clear();
-            return;
+            return false;
         }
 
+        std::strncpy(state_->version, version.c_str(), sizeof(state_->version) - 1);
         state_->initialized = kInitializedMagic;
 #endif
+        return true;
     }
 
     // Consumer opens existing semaphore
@@ -231,6 +257,14 @@ namespace {
         {
             automationtest::utilities::Logger::Error(
                 "OpenSemaphore failed in OpenForConsumer(): " + name_);
+            return;
+        }
+        const auto stateName = BuildStateName(name_);
+        shared_memory_ = ::OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, stateName.c_str());
+        if (shared_memory_ != nullptr)
+        {
+            state_ = static_cast<SharedSemaphoreState*>(
+                ::MapViewOfFile(shared_memory_, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(SharedSemaphoreState)));
         }
 #else
         shm_fd_ = shm_open(name_.c_str(), O_RDWR, 0);
@@ -241,7 +275,10 @@ namespace {
             return;
         }
 
-        if (!MapSharedMemory(shm_fd_))
+        struct stat sharedMemoryInfo {};
+        if (fstat(shm_fd_, &sharedMemoryInfo) == -1
+            || sharedMemoryInfo.st_size < static_cast<off_t>(sizeof(SharedSemaphoreState))
+            || !MapSharedMemory(shm_fd_))
         {
             Close();
             return;
@@ -254,6 +291,13 @@ namespace {
             Close();
         }
 #endif
+    }
+
+    std::string SharedMemorySemaphore::RunningVersion() const
+    {
+        if (state_ == nullptr || state_->initialized != kInitializedMagic)
+            return {};
+        return std::string(state_->version, strnlen(state_->version, sizeof(state_->version)));
     }
 
     // Creator waits
@@ -362,6 +406,13 @@ namespace {
                 break;
             if ( WaitForSignal ( 200)  )
             {
+                const auto command = state_ == nullptr ? kCommandShow : state_->command;
+                if (command == kCommandQuit)
+                {
+                    QMetaObject::invokeMethod(
+                        QCoreApplication::instance(), &QCoreApplication::quit, Qt::QueuedConnection);
+                    break;
+                }
                 this->mainWin->ShowAndRestore();
             }
         }   
@@ -370,6 +421,12 @@ namespace {
 
     // Consumer triggers creator
     void SharedMemorySemaphore::Trigger()
+    {
+        SetCommand(kCommandShow);
+        Signal();
+    }
+
+    void SharedMemorySemaphore::Signal()
     {
 #ifdef _WIN32
         if (semaphore_ == nullptr)
@@ -389,6 +446,18 @@ namespace {
 #endif
     }
 
+    void SharedMemorySemaphore::SetCommand(std::uint32_t command)
+    {
+        if (state_ != nullptr)
+            state_->command = command;
+    }
+
+    void SharedMemorySemaphore::RequestQuit()
+    {
+        SetCommand(kCommandQuit);
+        Signal();
+    }
+
     void SharedMemorySemaphore::Close()
     {
         StopThreadToWait();
@@ -398,6 +467,16 @@ namespace {
         {
             ::CloseHandle(semaphore_);
             semaphore_ = nullptr;
+        }
+        if (state_ != nullptr)
+        {
+            ::UnmapViewOfFile(state_);
+            state_ = nullptr;
+        }
+        if (shared_memory_ != nullptr)
+        {
+            ::CloseHandle(shared_memory_);
+            shared_memory_ = nullptr;
         }
 #else
         if (state_)
@@ -443,6 +522,11 @@ namespace {
 #endif
 
         
+    }
+
+    std::string SharedMemorySemaphore::BuildStateName(const std::string& semaphoreName)
+    {
+        return semaphoreName + "_state";
     }
 
 };

@@ -22,6 +22,7 @@ public:
     static void SetMinimizedWhenStarted(bool minimized);
     static bool AutoStartPromptShown();
     static void SetAutoStartPromptShown();
+    static std::string VersionNumber();
     static QSettings AppSettings();
 };
 

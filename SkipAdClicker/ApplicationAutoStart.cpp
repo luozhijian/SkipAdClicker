@@ -384,7 +384,7 @@ bool RemoveLegacyRunRegistration(QString* error_message)
     return true;
 }
 
-bool IsLegacyRunRegistrationEnabled()
+QString LegacyRunRegistrationCommand()
 {
     HKEY run_key = nullptr;
     const auto open_status = RegOpenKeyExW(
@@ -394,7 +394,7 @@ bool IsLegacyRunRegistrationEnabled()
         KEY_QUERY_VALUE,
         &run_key);
     if (open_status != ERROR_SUCCESS) {
-        return false;
+        return {};
     }
 
     DWORD value_type = 0;
@@ -422,7 +422,18 @@ bool IsLegacyRunRegistrationEnabled()
     return query_status == ERROR_SUCCESS
         && value_type == REG_SZ
         && !stored_value.empty()
-        && QString::fromWCharArray(stored_value.data()) == WindowsStartupCommand();
+        ? QString::fromWCharArray(stored_value.data())
+        : QString {};
+}
+
+bool IsLegacyRunRegistrationEnabled()
+{
+    return !LegacyRunRegistrationCommand().isEmpty();
+}
+
+bool IsLegacyRunRegistrationCurrent()
+{
+    return LegacyRunRegistrationCommand() == WindowsStartupCommand();
 }
 
 bool IsPlatformRegistrationEnabled()
@@ -454,6 +465,61 @@ bool IsPlatformRegistrationEnabled()
         return false;
     }
     return enabled == VARIANT_TRUE || IsLegacyRunRegistrationEnabled();
+}
+
+bool IsPlatformRegistrationCurrent()
+{
+    ScopedComInitialize com;
+    if (FAILED(com.Initialize())) {
+        return IsLegacyRunRegistrationCurrent();
+    }
+
+    ComPtr<ITaskService> service;
+    ComPtr<ITaskFolder> root_folder;
+    if (!ConnectToTaskScheduler(service, root_folder, nullptr)) {
+        return IsLegacyRunRegistrationCurrent();
+    }
+
+    ComPtr<IRegisteredTask> registered_task;
+    ScopedBstr task_name(kWindowsTaskName);
+    if (FAILED(root_folder->GetTask(task_name.Get(), registered_task.Put()))) {
+        return IsLegacyRunRegistrationCurrent();
+    }
+
+    ComPtr<ITaskDefinition> task_definition;
+    if (FAILED(registered_task->get_Definition(task_definition.Put()))) {
+        return false;
+    }
+    ComPtr<IActionCollection> actions;
+    if (FAILED(task_definition->get_Actions(actions.Put()))) {
+        return false;
+    }
+    ComPtr<IAction> action;
+    if (FAILED(actions->get_Item(1, action.Put()))) {
+        return false;
+    }
+    ComPtr<IExecAction> exec_action;
+    if (FAILED(action->QueryInterface(IID_PPV_ARGS(exec_action.Put())))) {
+        return false;
+    }
+
+    BSTR stored_path = nullptr;
+    BSTR stored_arguments = nullptr;
+    if (FAILED(exec_action->get_Path(&stored_path))
+        || FAILED(exec_action->get_Arguments(&stored_arguments))) {
+        SysFreeString(stored_path);
+        SysFreeString(stored_arguments);
+        return false;
+    }
+
+    const auto expected = WindowsTaskActionCommand();
+    const auto path_matches =
+        QString::fromWCharArray(stored_path).compare(expected.path, Qt::CaseInsensitive) == 0;
+    const auto arguments_match =
+        QString::fromWCharArray(stored_arguments).compare(expected.arguments, Qt::CaseInsensitive) == 0;
+    SysFreeString(stored_path);
+    SysFreeString(stored_arguments);
+    return path_matches && arguments_match;
 }
 
 bool UpdatePlatformRegistration(bool enabled, QString* error_message)
@@ -690,6 +756,12 @@ QByteArray LaunchAgentContents()
     return contents;
 }
 
+bool IsPlatformRegistrationCurrent()
+{
+    QFile file(LaunchAgentPath());
+    return file.open(QIODevice::ReadOnly) && file.readAll() == LaunchAgentContents();
+}
+
 bool UpdatePlatformRegistration(bool enabled, QString* error_message)
 {
     const auto file_path = LaunchAgentPath();
@@ -745,6 +817,12 @@ QByteArray LinuxDesktopEntry()
         .toUtf8();
 }
 
+bool IsPlatformRegistrationCurrent()
+{
+    QFile file(LinuxAutoStartPath());
+    return file.open(QIODevice::ReadOnly) && file.readAll() == LinuxDesktopEntry();
+}
+
 bool UpdatePlatformRegistration(bool enabled, QString* error_message)
 {
     const auto file_path = LinuxAutoStartPath();
@@ -754,6 +832,11 @@ bool UpdatePlatformRegistration(bool enabled, QString* error_message)
 }
 #else
 bool IsPlatformRegistrationEnabled()
+{
+    return false;
+}
+
+bool IsPlatformRegistrationCurrent()
 {
     return false;
 }
@@ -769,6 +852,11 @@ bool UpdatePlatformRegistration(bool, QString* error_message)
 bool ApplicationAutoStart::IsEnabled()
 {
     return IsPlatformRegistrationEnabled();
+}
+
+bool ApplicationAutoStart::UsesCurrentApplication()
+{
+    return IsPlatformRegistrationCurrent();
 }
 
 bool ApplicationAutoStart::SetEnabled(bool enabled, QString* error_message)

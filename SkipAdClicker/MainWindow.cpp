@@ -453,7 +453,20 @@ bool MainWindow::SetStartAfterRestartEnabled(bool enabled)
 
 bool MainWindow::IsStartAfterRestartEnabled() const
 {
-    return ApplicationAutoStart::IsEnabled();
+    if (!ApplicationAutoStart::IsEnabled()) {
+        return false;
+    }
+
+    if (!ApplicationAutoStart::UsesCurrentApplication()) {
+        QString error_message;
+        if (!ApplicationAutoStart::SetEnabled(true, &error_message)) {
+            LogView::AddLog(
+                QString("Could not update the startup application path: %1").arg(error_message));
+        } else {
+            LogView::AddLog("Updated the startup application path to the current version.");
+        }
+    }
+    return true;
  }
 
 void MainWindow::PromptForAutoStartOnFirstRun()
@@ -742,11 +755,6 @@ void MainWindow::ProcessCommandLine()
 {
     QThread::msleep(500);
 
-    if ( g_SharedMemorySemaphore->Exists ())
-    {
-        g_SharedMemorySemaphore->Clear();
-    }
-    g_SharedMemorySemaphore->CreateForCreator();
     g_SharedMemorySemaphore->Wait(this);
 
     PromptForAutoStartOnFirstRun();

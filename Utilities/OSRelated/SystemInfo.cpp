@@ -15,6 +15,7 @@
 #include <windows.h>
 #include <Lmcons.h>
 #include <process.h>
+#include <tlhelp32.h>
 
 #undef GetUserName
 
@@ -69,6 +70,43 @@ namespace SystemInfo
     {
         return true;
     }
+
+    bool KillAnotherProcessWithSameName()
+    {
+        const std::string current_process_name = GetCurrentProcessName();
+        const DWORD current_process_id = ::GetCurrentProcessId();
+        HANDLE snapshot = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        if (snapshot == INVALID_HANDLE_VALUE)
+            return false;
+
+        PROCESSENTRY32 process_entry{};
+        process_entry.dwSize = sizeof(process_entry);
+        bool killed = false;
+
+        if (::Process32First(snapshot, &process_entry))
+        {
+            do
+            {
+                if (process_entry.th32ProcessID == current_process_id
+                    || std::filesystem::path(process_entry.szExeFile).filename().string()
+                        != current_process_name)
+                {
+                    continue;
+                }
+
+                HANDLE process = ::OpenProcess(PROCESS_TERMINATE, FALSE, process_entry.th32ProcessID);
+                if (process != nullptr)
+                {
+                    killed = ::TerminateProcess(process, 1) != FALSE;
+                    ::CloseHandle(process);
+                }
+                break;
+            } while (::Process32Next(snapshot, &process_entry));
+        }
+
+        ::CloseHandle(snapshot);
+        return killed;
+    }
 }
 
 #else
@@ -76,6 +114,7 @@ namespace SystemInfo
 #include <unistd.h>
 #include <pwd.h>
 #include <limits.h>
+#include <csignal>
 
 namespace SystemInfo
 {
@@ -167,6 +206,38 @@ namespace SystemInfo
             {
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    bool KillAnotherProcessWithSameName()
+    {
+        const std::string current_process_name = GetCurrentProcessName();
+        const int current_process_id = GetProcessId();
+
+        for (const auto& entry : std::filesystem::directory_iterator("/proc"))
+        {
+            const std::string pid_text = entry.path().filename().string();
+            if (!entry.is_directory()
+                || pid_text.empty()
+                || !std::all_of(
+                    pid_text.begin(), pid_text.end(),
+                    [](unsigned char character) { return std::isdigit(character); }))
+            {
+                continue;
+            }
+
+            const int process_id = std::stoi(pid_text);
+            if (process_id == current_process_id)
+                continue;
+
+            std::error_code error;
+            const auto executable = std::filesystem::read_symlink(entry.path() / "exe", error);
+            if (error || executable.filename().string() != current_process_name)
+                continue;
+
+            return ::kill(process_id, SIGKILL) == 0;
         }
 
         return false;
