@@ -27,6 +27,8 @@ public:
     void CalculateAngles();
     [[nodiscard]] bool IsScrollBarOrDropDownArrow();
     [[nodiscard]] std::string ToString() const;
+    
+	TriangleWithDescription Expand(int expand_pixels) const;
 
     Point point1 {};
     Point point2 {};

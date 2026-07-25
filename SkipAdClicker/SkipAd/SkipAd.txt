@@ -1,5 +1,5 @@
 
-#relative path is relative to this folder
+#relative path is relative to this file
 
 $Endlessloop=StoreTrue 
 $SecondsDelay=StoreValue 1.0
@@ -10,7 +10,7 @@ LogWStringSetPointer ListOfBrowserApplications $browers
 
 WhileLoop $Endlessloop $SecondsDelay $LoopTotalSeconds OnErrorCountContinuousErrorStopAtMax  $StopAtCountOfError
 	$browserVisible=IsBrowserVisible $browers
-	LogBool FindBrowser $browserVisible
+	#LogBool FindBrowser $browserVisible
 	IfCondition not $browserVisible
 		continue
 

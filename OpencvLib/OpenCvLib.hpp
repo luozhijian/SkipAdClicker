@@ -51,8 +51,8 @@ public:
 
 using Bitmap = automationtest::utilities::Bitmap;
 
-std::string DM(const cv::Mat& mat);
-std::string DB(const Bitmap& bp);
+const char* DM(const cv::Mat& mat);
+const char* DB(const Bitmap& bp);
 const char* DP(std::vector<std::vector<cv::Point>>& contours);
 
 #endif // AUTOMATIOTEST_OPENCVLIB_OPENCVLIB_HPP

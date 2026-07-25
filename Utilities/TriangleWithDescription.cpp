@@ -16,6 +16,71 @@ TriangleWithDescription::TriangleWithDescription(Point p1, Point p2, Point p3)
 {
 }
 
+TriangleWithDescription TriangleWithDescription::Expand(int expand_pixels) const
+{
+    if (expand_pixels == 0) {
+        return *this;
+    }
+
+    struct DoublePoint {
+        double x;
+        double y;
+    };
+
+    const DoublePoint points[] {
+        {static_cast<double>(point1.x), static_cast<double>(point1.y)},
+        {static_cast<double>(point2.x), static_cast<double>(point2.y)},
+        {static_cast<double>(point3.x), static_cast<double>(point3.y)}
+    };
+    const double signed_double_area =
+        points[0].x * (points[1].y - points[2].y)
+        + points[1].x * (points[2].y - points[0].y)
+        + points[2].x * (points[0].y - points[1].y);
+
+    if (signed_double_area == 0.0) {
+        return *this;
+    }
+
+    DoublePoint shifted_starts[3] {};
+    DoublePoint directions[3] {};
+    const double orientation = signed_double_area > 0.0 ? 1.0 : -1.0;
+
+    for (int i = 0; i < 3; ++i) {
+        const DoublePoint start = points[i];
+        const DoublePoint end = points[(i + 1) % 3];
+        const DoublePoint direction {end.x - start.x, end.y - start.y};
+        const double length = std::hypot(direction.x, direction.y);
+        if (length == 0.0) {
+            return *this;
+        }
+
+        const double offset = static_cast<double>(expand_pixels) * orientation;
+        shifted_starts[i] = {
+            start.x + offset * direction.y / length,
+            start.y - offset * direction.x / length
+        };
+        directions[i] = direction;
+    }
+
+    const auto intersect = [&](int first, int second) {
+        const DoublePoint delta {
+            shifted_starts[second].x - shifted_starts[first].x,
+            shifted_starts[second].y - shifted_starts[first].y
+        };
+        const double cross =
+            directions[first].x * directions[second].y
+            - directions[first].y * directions[second].x;
+        const double distance_along_first =
+            (delta.x * directions[second].y - delta.y * directions[second].x) / cross;
+        return Point {
+            static_cast<int>(std::lround(shifted_starts[first].x + distance_along_first * directions[first].x)),
+            static_cast<int>(std::lround(shifted_starts[first].y + distance_along_first * directions[first].y))
+        };
+    };
+
+    return TriangleWithDescription(intersect(2, 0), intersect(0, 1), intersect(1, 2));
+}
+
 std::vector<Point> TriangleWithDescription::AsArray() const
 {
     return {point1, point2, point3};

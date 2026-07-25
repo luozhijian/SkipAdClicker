@@ -11,6 +11,7 @@
 #include "../Utilities/Logger.hpp"
 #include "../OcrLib/OcrProcesser.hpp"
 #include "../Utilities/StringLib.hpp"
+#include "../OpencvLib/SmallTriangleDetector.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -35,6 +36,7 @@ using automationtest::utilities::exceptions::TestException;
 using automationtest::utilities::settings::SettingCanny;
 using automationtest::utilities::settings::SettingLineDetection;
 using automationtest::utilities::StringLib;
+using automationtest::opencvlib::SmallTriangleDetector;
 
 namespace {
 
@@ -55,7 +57,7 @@ cv::Mat CropMat(const cv::Mat& input, const Rectangle& rect)
     return input(cv::Rect(left, top, right - left, bottom - top));
 }
 
-cv::Mat BitmapRegionToGrayMat(const Bitmap& bitmap, const Rectangle& region)
+std::pair<cv::Mat, cv::Mat> BitmapRegionToGrayMat(const Bitmap& bitmap, const Rectangle& region)
 {
     if (bitmap.width <= 0 || bitmap.height <= 0 || bitmap.pixels.empty()) {
         return {};
@@ -82,7 +84,7 @@ cv::Mat BitmapRegionToGrayMat(const Bitmap& bitmap, const Rectangle& region)
     const int type = CV_MAKETYPE(CV_8U, std::max(1, channels));
     cv::Mat view(bounded.height, bounded.width, type, const_cast<std::byte*>(bitmap.pixels.data() + offset), stride);
     if (channels == 1) {
-        return view.clone();
+        return {view, view.clone()};
     }
 
     cv::Mat gray {};
@@ -93,7 +95,7 @@ cv::Mat BitmapRegionToGrayMat(const Bitmap& bitmap, const Rectangle& region)
     } else {
         gray = view.reshape(1).clone();
     }
-    return gray;
+    return {view, gray};
 }
 
 Rectangle Intersect(const Rectangle& a, const Rectangle& b)
@@ -238,17 +240,21 @@ bool VerifySkipAdBarPart(const cv::Mat& gray, const TriangleWithDescription& tri
     const int y1 = parts->upper.y + 1;
     const int y2 = parts->lower.y;
     const int height = y2 - y1;
-    const int length = height / 2;
+    const int length = height / 2 ;
     if (height <= 0 || length <= 0 || parts->tip.x + length >= gray.cols || y1 < 0 || y2 > gray.rows) {
         return false;
     }
 
     std::vector<int> column_averages(static_cast<std::size_t>(length), 0);
+    std::vector<int> column_averages_out(static_cast<std::size_t>(length), 0);
     int max_column = 0;
     int max_value = 0;
+    int min_column = 0;
+    int min_value = 256;
+
     for (int i = 0, x = parts->tip.x + 1; i < length; ++i, ++x) {
         int sum = 0;
-        for (int y = y1; y < y2; ++y) {
+        for (int y = y1; y <= y2; ++y) {
             sum += MatExtension::GetByteValue(gray, y, x);
         }
         const int average = sum / height;
@@ -257,11 +263,51 @@ bool VerifySkipAdBarPart(const cv::Mat& gray, const TriangleWithDescription& tri
             max_value = average;
             max_column = i;
         }
+        if (average < min_value)
+        {
+            min_value = average;
+            min_column = i;
+        }
+
+        // check if up and down is match condition 
+        int count_out = 0;
+        int sum_out = 0;
+        int temp_i= 0;
+
+       
+        for (int Y_times_ : {1, -1}) {
+            bool isStillSameAsAverage = true;
+            for (int kk = 1;kk <= 4; kk++)
+            {
+                temp_i = MatExtension::GetByteValue(gray, y1  + Y_times_ * kk, x);
+                if (isStillSameAsAverage)
+                {
+                    if (RelativeDifference(temp_i, average) > 0.1)
+                        isStillSameAsAverage = false;
+                    else
+                        continue;
+                }
+                sum_out += temp_i;
+                count_out += 1;
+            }
+        }
+
+        column_averages_out[static_cast<std::size_t>(i)] = count_out >0? sum_out / count_out: average;
     }
 
-    if (RelativeDifference(max_value, color) > 0.1 || max_column > 7 || max_column < 2) {
+    if (max_column > 7 || max_column < 2)
         return false;
-    }
+
+
+    int _max_average = column_averages [max_column];
+    int _max_average_column_outer_average = column_averages_out[max_column];
+
+    if (_max_average_column_outer_average > _max_average + 4)   // outer should not be white than the bar
+        return false;
+
+    //the bar is not bright enough, the brightness diff should be large than 0.2
+    if (RelativeDifference(_max_average_column_outer_average, _max_average) < 0.2)
+        return false;
 
     int left_max = 0;
     int right_max = 0;
@@ -275,8 +321,10 @@ bool VerifySkipAdBarPart(const cv::Mat& gray, const TriangleWithDescription& tri
             break;
         }
     }
+    // bar cannot be too width 
+    bool barIs_too_width= right_max - left_max  > static_cast<int>(height / 3);
 
-    return right_max - left_max + 2 > static_cast<int>(length / 3.0);
+	return !barIs_too_width;
 }
 
 bool ContainsTextBlockFromGray(const cv::Mat& gray, const SettingCanny& canny_setting, int min_width, float text_block_threshold)
@@ -328,7 +376,104 @@ bool ContainsTextBlockFromGray(const cv::Mat& gray, const SettingCanny& canny_se
     return false;
 }
 
-bool VerifySkipAdWordPart(const cv::Mat& gray, const SettingCanny& canny_setting, const TriangleWithDescription& triangle, int color, int delta)
+
+
+cv::Mat processHighlightedText(const cv::Mat& grayImage, int gaussianBlurSize, int blockSize, double C) {
+ 
+    // Initialize destination Mats
+    cv::Mat blurred;
+    cv::Mat adaptiveThresh;
+    cv::Mat cleanedText;
+
+    // Step 2: Apply a light Gaussian Blur to reduce high-frequency noise
+    // Python equivalent: cv2.GaussianBlur(image, (3, 3), 0)
+    cv::GaussianBlur(grayImage, blurred, cv::Size(gaussianBlurSize, gaussianBlurSize), 0);
+
+    // Step 3: Use Adaptive Thresholding (Gaussian method handles gradients best)
+    // Python equivalent: cv2.adaptiveThreshold(..., cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 3, 2)
+    cv::adaptiveThreshold(
+        blurred,
+        adaptiveThresh,
+        255,
+        cv::ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv::THRESH_BINARY,
+        blockSize,
+        C
+    );
+
+    //// Step 4: Optional Clean up using Morphological Opening (removes tiny background specks)
+    //// Python equivalent: kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+    //cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 2));
+
+    //// Python equivalent: cv2.morphologyEx(adaptive_thresh, cv2.MORPH_OPEN, kernel)
+    //cv::morphologyEx(adaptiveThresh, cleanedText, cv::MORPH_OPEN, kernel);
+
+    // C++ handles memory automatically via RAII; temporary Mats (grayImage, blurred, adaptiveThresh) 
+    // will be automatically freed when this function goes out of scope.
+    return adaptiveThresh;
+}
+
+cv::Mat processHighlightedTriangle(const cv::Mat& grayImage, int medianBlurSize, int blockSize, double C) {
+
+    // Initialize destination Mats
+    cv::Mat blurred;
+    cv::Mat adaptiveThresh;
+    cv::Mat cleanedText;
+
+    // Step 2: Apply a light Gaussian Blur to reduce high-frequency noise
+    // Python equivalent: cv2.GaussianBlur(image, (3, 3), 0)
+    cv::medianBlur(grayImage, blurred, medianBlurSize);
+
+    // Step 3: Use Adaptive Thresholding (Gaussian method handles gradients best)
+    // Python equivalent: cv2.adaptiveThreshold(..., cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 3, 2)
+    cv::adaptiveThreshold(
+        blurred,
+        adaptiveThresh,
+        255,
+        cv::ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv::THRESH_BINARY,
+        blockSize,
+        C
+    );
+
+    //// Step 4: Optional Clean up using Morphological Opening (removes tiny background specks)
+    //// Python equivalent: kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+    //cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 2));
+
+    //// Python equivalent: cv2.morphologyEx(adaptive_thresh, cv2.MORPH_OPEN, kernel)
+    //cv::morphologyEx(adaptiveThresh, cleanedText, cv::MORPH_OPEN, kernel);
+
+    // C++ handles memory automatically via RAII; temporary Mats (grayImage, blurred, adaptiveThresh) 
+    // will be automatically freed when this function goes out of scope.
+    return adaptiveThresh;
+}
+
+
+/**
+ * Extracts white regions from a BGR image and returns a single-channel gray mask.
+ *
+ * @param image Input image Mat (BGR format)
+ * @return cv::Mat Gray Mat (Binary mask where white pixels are 255 and others are 0)
+ */
+cv::Mat extractWhiteMask(const cv::Mat& image) {
+    // 1. Convert from BGR to HSV color space
+    cv::Mat hsv;
+    cv::cvtColor(image, hsv, cv::COLOR_BGR2HSV);
+
+    // 2. Define the HSV boundaries for the color white
+    // Scalar format: Scalar(H, S, V)
+    cv::Scalar lower_white(0, 0, 180);
+    cv::Scalar upper_white(80, 30, 255);
+
+    // 3. Create the binary gray mask
+    cv::Mat mask;
+    cv::inRange(hsv, lower_white, upper_white, mask);
+
+    return mask;
+}
+
+
+bool VerifySkipAdWordPart(const cv::Mat& full_color_mat, const cv::Mat& gray, const cv::Mat& canny, const SettingCanny& canny_setting, const TriangleWithDescription& triangle, int color, int delta)
 {
     const Rectangle rect = ExpandSkipAdToSmallRectangleWord(gray, triangle);
     if (rect.IsEmpty()) {
@@ -337,13 +482,29 @@ bool VerifySkipAdWordPart(const cv::Mat& gray, const SettingCanny& canny_setting
     // theoritically, it is seasier to use canny result to check text block
     // but here, I think in future to check the text use OCR, in that case, the canny result is not great
     const auto cropped = CropMat(gray, rect);
-    const auto filtered = OpenCvLib::FilterMatByColor(cropped, color, delta);
+    //const auto cropped_canny = CropMat(canny, rect);
+    //const auto filtered = OpenCvLib::FilterMatByColor(cropped, color, delta);
+
+    const auto filtered = processHighlightedText(cropped, 3, 3, 2);
 	//bool b_have_text_block = ContainsTextBlockFromGray(filtered, canny_setting, rect.height, 0.4F);
     auto ocr_result = automationtest::ocrlib::OcrProcesser::TryOcrOneLineFromMat(filtered);
     
 	int count = StringLib::CountOverlaps(ocr_result, "skipad");
 
-    return count>=2;
+    if (count >= 2)
+        return true;
+
+    const auto cropped_2= CropMat(full_color_mat, rect);
+    const auto filtered_2= extractWhiteMask(cropped_2);
+
+    auto ocr_result_2 = automationtest::ocrlib::OcrProcesser::TryOcrOneLineFromMat(filtered_2);
+
+    int count_2 = StringLib::CountOverlaps(ocr_result_2, "skipad");
+
+    if (count_2 >= 2)
+        return true;
+
+    return false;
 }
 
 bool IsBoundColorBlack(const cv::Mat& gray, const TriangleWithDescription& triangle)
@@ -386,7 +547,7 @@ bool  VerfiyTriangleIsSolidAndContainedByBlack(const cv::Mat& gray, const Triang
     const double foregroundArea = cv::countNonZero(filledPixels);
     const double fillRatio = foregroundArea / triangleArea;
 
-    bool isSolidTriangle_black = fillRatio < 0.1;
+    bool isSolidTriangle_black = fillRatio < 0.2;
     if (!isSolidTriangle_black) {
         return false;
     }
@@ -411,7 +572,7 @@ bool  VerfiyTriangleIsSolidAndContainedByBlack(const cv::Mat& gray, const Triang
 }
 
 
-bool VerifySkipAdByColor(const cv::Mat& gray, const TriangleWithDescription& triangle, const SettingCanny& canny_setting)
+bool VerifySkipAdByColor(const cv::Mat& full_color_mat, const cv::Mat& gray, const cv::Mat& canny, const TriangleWithDescription& triangle, const SettingCanny& canny_setting)
 {
     const auto [color, coverage] = OpenCvLib::VerifySameCodeAndGetTheColor(gray, triangle.AsArray());
     if (coverage < 0.8F) {
@@ -422,7 +583,7 @@ bool VerifySkipAdByColor(const cv::Mat& gray, const TriangleWithDescription& tri
         return false;
     }
 
-    if (!VerifySkipAdWordPart(gray, canny_setting, triangle, color, 20)) {
+    if (!VerifySkipAdWordPart(full_color_mat, gray, canny, canny_setting, triangle, color, 20)) {
         return false;
     }
 
@@ -435,68 +596,76 @@ bool VerifySkipAdByColor(const cv::Mat& gray, const TriangleWithDescription& tri
 
 
 
-bool VerifySkipAd(const cv::Mat& gray, const cv::Mat& canny, const TriangleWithDescription& triangle, const SettingCanny& canny_setting)
+bool VerifySkipAd(const cv::Mat& full_color_mat, const cv::Mat& gray, const cv::Mat& canny, const TriangleWithDescription& triangle, const SettingCanny& canny_setting)
 {
-    if (!VerifySkipAdByColor(gray, triangle, canny_setting)) {
+    if (!VerifySkipAdByColor(full_color_mat, gray, canny, triangle, canny_setting)) {
         return false;
     }
     //return SkipAdDetector::VerifyNearCorner(gray, canny, triangle);
     return true;
 }
 
-std::vector<TriangleWithDescription> FindSkipAdInGray(
-    const cv::Mat& gray,
-    const SettingLineDetection& line_detection)
-{
-    if (gray.empty()) {
-        return {};
-    }
-
-    const auto canny = OpenCvLib::ApplyCannyReturnRawIfFailed(
-        gray,
-        true,
-        line_detection.setting_canny.threshold1,
-        line_detection.setting_canny.threshold2);
-    auto triangles = OpenCvLib::FindTriangles(canny);
-    std::vector<TriangleWithDescription> result {};
-    std::vector<Point> centers_processed {};
-    result.reserve(triangles.size());
-    centers_processed.reserve(triangles.size());
-    constexpr int duplicate_delta = 4;
-
-    for (const auto& triangle : triangles) {
-        const auto center = triangle.Center();
-        const bool is_close_to_processed = PointHelper::IsCloseToAny(center, centers_processed, duplicate_delta);
-        centers_processed.push_back(center);
-        if (is_close_to_processed) {
-            continue;
-        }
-
-        if (VerifySkipAd(gray, canny, triangle, line_detection.setting_canny)) {
-            result.push_back(triangle);
-        }
-    }
-    return result;
-}
+//std::vector<TriangleWithDescription> FindSkipAdInGray(
+//    const cv::Mat& gray,
+//    const SettingLineDetection& line_detection)
+//{
+//    if (gray.empty()) {
+//        return {};
+//    }
+//
+//    const auto canny = OpenCvLib::ApplyCannyReturnRawIfFailed(
+//        gray,
+//        true,
+//        line_detection.setting_canny.threshold1,
+//        line_detection.setting_canny.threshold2);
+//    auto triangles = OpenCvLib::FindTriangles(canny);
+//    std::vector<TriangleWithDescription> result {};
+//    std::vector<Point> centers_processed {};
+//    result.reserve(triangles.size());
+//    centers_processed.reserve(triangles.size());
+//    constexpr int duplicate_delta = 4;
+//
+//    for (const auto& triangle : triangles) {
+//        const auto center = triangle.Center();
+//        const bool is_close_to_processed = PointHelper::IsCloseToAny(center, centers_processed, duplicate_delta);
+//        centers_processed.push_back(center);
+//        if (is_close_to_processed) {
+//            continue;
+//        }
+//
+//        if (VerifySkipAd(gray, canny, triangle, line_detection.setting_canny)) {
+//            result.push_back(triangle);
+//        }
+//    }
+//    return result;
+//}
 
 std::optional<TriangleWithDescription> FindFirstSkipAdInGray(
+    const cv::Mat& full_color_mat,
     const cv::Mat& gray,
     const SettingLineDetection& line_detection)
 {
     if (gray.empty()) {
         return std::nullopt;
     }
+
+
     cv::Mat eroded;
-    cv::erode(gray, eroded, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)), cv::Point(-1, -1), 1);
+    cv::erode(gray , eroded, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)), cv::Point(-1, -1), 2);
     const auto canny = OpenCvLib::ApplyCannyReturnRawIfFailed(
         eroded,
         true,
         line_detection.setting_canny.threshold1,
         line_detection.setting_canny.threshold2);
-    auto triangles = OpenCvLib::FindTriangles(canny);
+    auto triangles_2 = OpenCvLib::FindTriangles(canny);
+    cv::Mat high_lighted = processHighlightedTriangle(gray, 5, 33, 2);
+
+    auto triangles = SmallTriangleDetector::FindSmallTriangles(high_lighted);
     std::vector<Point> centers_processed {};
     centers_processed.reserve(triangles.size());
     constexpr int duplicate_delta = 4;
+
+    triangles.insert(triangles.end(), triangles_2.begin(), triangles_2.end());
 
     for (const auto& triangle : triangles) {
         const auto center = triangle.Center();
@@ -506,7 +675,9 @@ std::optional<TriangleWithDescription> FindFirstSkipAdInGray(
             continue;
         }
 
-        if (VerifySkipAd(gray, canny, triangle, line_detection.setting_canny)) {
+		//because of the above erode, the triangle is smaller than the original one, so we need to expand it to check the color
+		auto expanded_triangle = triangle.Expand(1);
+        if (VerifySkipAd(full_color_mat, gray, canny, triangle, line_detection.setting_canny)) {
             return triangle;
         }
     }
@@ -515,11 +686,11 @@ std::optional<TriangleWithDescription> FindFirstSkipAdInGray(
 
 } // namespace
 
-std::vector<TriangleWithDescription> SkipAdDetector::FindSkipAd(const Bitmap& image, const SettingLineDetection& line_detection)
-{
-    const auto gray = BitmapRegionToGrayMat(image, Rectangle {0, 0, image.width, image.height});
-    return FindSkipAdInGray(gray, line_detection);
-}
+//std::vector<TriangleWithDescription> SkipAdDetector::FindSkipAd(const Bitmap& image, const SettingLineDetection& line_detection)
+//{
+//    const auto gray = BitmapRegionToGrayMat(image, Rectangle {0, 0, image.width, image.height});
+//    return FindSkipAdInGray(gray, line_detection);
+//}
 
 void SkipAdDetector::RegisterBindings(automationtest::utilities::status::LoadFunctions& load_functions)
 {
@@ -590,9 +761,9 @@ std::optional<Bitmap> SkipAdDetector::ClickOnSkipAd(const std::vector<LocatedBit
             continue;
         }
 
-        const auto gray = BitmapRegionToGrayMat(image, Rectangle {0, 0, image.width, image.height});
+        const auto [full_color_mat, gray ] = BitmapRegionToGrayMat(image, Rectangle {0, 0, image.width, image.height});
 		//const auto gray = OpenCvLib::ApplyThresholdReturnRawIfFailed(raw_gray, line_detection.setting_threshold);
-        const auto triangle = FindFirstSkipAdInGray(gray, line_detection);
+        const auto triangle = FindFirstSkipAdInGray(full_color_mat, gray, line_detection);
         if (!triangle.has_value()) {
             continue;
         }

@@ -2,19 +2,22 @@
 #define AUTOMATIOTEST_OPENCVLIB_SMALLTRIANGLEDETECTOR_HPP
 
 #include "../Utilities/CommonTypes.hpp"
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include <vector>
+
+#include "../Utilities/TriangleWithDescription.hpp"
+
 
 namespace automationtest::opencvlib {
 
 class SmallTriangleDetector {
 public:
-    explicit SmallTriangleDetector(const automationtest::utilities::Bitmap& bitmap);
-
-    [[nodiscard]] std::vector<automationtest::utilities::Rectangle> FindSmallTriangles() const;
+	static std::vector<automationtest::utilities::TriangleWithDescription> FindSmallTriangles(const cv::Mat& binary);
 
 private:
-    automationtest::utilities::Bitmap bitmap_ {};
+ 
 };
 
 } // namespace automationtest::opencvlib

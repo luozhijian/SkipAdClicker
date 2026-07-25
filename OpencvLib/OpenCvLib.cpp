@@ -485,25 +485,30 @@ std::vector<TriangleWithDescription> OpenCvLib::FindTriangles(const cv::Mat& can
         if (height > 50 || width > 50) {
             continue;
         }
+
+		// because the input is eroded, so the triangle will be smaller than the original one, we need to expand it a little bit
         if (std::abs(height - width) < 8) {
-            triangles.emplace_back(points[0], points[1], points[2]);
+            auto new_point1 = Point(points[0].x - 1, points[0].y - 2);
+            auto new_point2 = Point(points[1].x - 1, points[1].y + 2);
+            auto new_point3 = Point(points[2].x + 3, points[2].y );
+            triangles.emplace_back(new_point1, new_point2, new_point3);
         }
     }
     return triangles;
 }
 
-std::vector<TriangleWithDescription> OpenCvLib::FindSmallTriangles(const Bitmap& bitmap)
-{
-    std::vector<TriangleWithDescription> triangles {};
-    for (const auto& rectangle : SmallTriangleDetector(bitmap).FindSmallTriangles()) {
-        const auto top = rectangle.y;
-        const auto bottom = rectangle.y + rectangle.height - 1;
-        const auto left = rectangle.x;
-        const auto right = rectangle.x + rectangle.width - 1;
-        triangles.emplace_back(Point {left, top}, Point {left, bottom}, Point {right, rectangle.y + rectangle.height / 2});
-    }
-    return triangles;
-}
+//std::vector<TriangleWithDescription> OpenCvLib::FindSmallTriangles(const Bitmap& bitmap)
+//{
+//    std::vector<TriangleWithDescription> triangles {};
+//    for (const auto& rectangle : SmallTriangleDetector(bitmap).FindSmallTriangles()) {
+//        const auto top = rectangle.y;
+//        const auto bottom = rectangle.y + rectangle.height - 1;
+//        const auto left = rectangle.x;
+//        const auto right = rectangle.x + rectangle.width - 1;
+//        triangles.emplace_back(Point {left, top}, Point {left, bottom}, Point {right, rectangle.y + rectangle.height / 2});
+//    }
+//    return triangles;
+//}
 
 
 std::pair<int, float> OpenCvLib::VerifySameCodeAndGetTheColor(const cv::Mat& gray, const std::vector<Point>& points)
@@ -678,8 +683,9 @@ std::string OpenCvLib::SerializeAsJson(std::vector<std::vector<cv::Point>> conto
 } // namespace automationtest::opencvlib
 
 
-std::string DM(const cv::Mat& mat)
+const char* DM(const cv::Mat& mat)
 {
+    static char filename_[500];
     if (mat.empty()) {
         automationtest::utilities::Logger::Error("Cannot display an empty cv::Mat.", "DM");
         return {};
@@ -693,11 +699,15 @@ std::string DM(const cv::Mat& mat)
     }
 
     StartBitmapViewer(saved_file, "DM");
-    return filename;
+	int n_copied = sizeof(filename_) - 1 > 499 ? 499 :  (sizeof(filename_) - 1 );
+    std::strncpy(filename_, saved_file.c_str(), n_copied);
+    filename_[n_copied] = '\0';
+    return filename_;
 }
 
-std::string DB(const Bitmap& bp)
+const char* DB(const Bitmap& bp)
 {
+    static char filename_[500];
     const auto filename = automationtest::utilities::FilePathLib::DebugImageFilePath("DB").string();
     const auto saved_file = automationtest::utilities::BitmapHelper::SaveBitmapFile(bp, filename);
     if (saved_file.empty()) {
@@ -707,7 +717,10 @@ std::string DB(const Bitmap& bp)
 
     StartBitmapViewer(saved_file, "DB");
 
-    return filename;
+	int n_copied = sizeof(filename_) - 1 > 499 ? 499 :  (sizeof(filename_) - 1 );
+    std::strncpy(filename_, saved_file.c_str(), n_copied);
+    filename_[n_copied] = '\0';
+    return filename_;
 }
 
 const char* DP(std::vector<std::vector<cv::Point>>& contours)
