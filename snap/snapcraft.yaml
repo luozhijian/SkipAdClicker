@@ -1,18 +1,19 @@
 name: skipadclicker
 title: SkipAdClicker
-version: "0.1.3"
+version: "0.1.5"
 summary: Desktop automation tool for finding and clicking Skip Ad controls
 description: |
-  SkipAdClicker automatically finds and clicks the "Skip Ad" button in YouTube videos using screenshots, OCR, and image recognition.
-  
-  It is a lightweight, single-threaded application that typically uses about 10% of one CPU thread. On most modern multi-core systems, this amounts to roughly 1% of total CPU usage, making its impact on system performance negligible.
-  
-  SkipAdClicker minimizes to the system tray and runs in the background. You can start or stop ad detection at any time, and optionally configure it to launch automatically when your computer starts via the Settings menu.
-  Source Code: https://github.com/luozhijian/SkipAdClicker
+  SkipAdClicker is a lightweight C++ Windows desktop application that automatically detects and clicks the "Skip Ad" button during video playback. It uses approximately 2–3% CPU while a supported web browser is running and about 0.7% CPU when no browser is active.
+  The application works by capturing screenshots of the screen and analyzing them with OpenCV. When the "Skip Ad" button is detected, SkipAdClicker automatically moves the mouse cursor and clicks the button.
+  SkipAdClicker features a simple Windows Forms interface that allows you to start or stop the clicker with a single click. When minimized, it runs quietly in the Windows system tray to stay out of the way. To completely close the application, select Close or Exit from the menu.
+  The application also uses different tray icons to indicate its current status, making it easy to see whether the clicker is running or stopped. If you want SkipAdClicker to start automatically whenever Windows starts, you can enable the Start with Windows option in the application settings.
 base: core24
 grade: stable
 confinement: strict
 license: MIT
+
+website: https://github.com/luozhijian/SkipAdClicker
+ 
 platforms:
   amd64:
 
@@ -62,9 +63,11 @@ parts:
 
       install -Dm755 "$CRAFT_PART_BUILD/build/bin/skipadclicker" "$CRAFT_PART_INSTALL/usr/bin/skipadclicker"
       cp -a "$CRAFT_PART_BUILD/build/bin/SkipAd" "$CRAFT_PART_INSTALL/usr/bin/SkipAd"
+      cp -a "$CRAFT_PART_BUILD/build/bin/tessdata" "$CRAFT_PART_INSTALL/usr/bin/tessdata"
       install -Dm644 "$CRAFT_PART_BUILD/build/bin/SkipAdClicker.ini" "$CRAFT_PART_INSTALL/usr/bin/SkipAdClicker.ini"
       install -Dm644 "$CRAFT_PART_BUILD/build/bin/SkipAdClicker.ico" "$CRAFT_PART_INSTALL/usr/bin/SkipAdClicker.ico"
       install -Dm644 "$CRAFT_PART_BUILD/build/bin/SkipAdClicker_ON.ico" "$CRAFT_PART_INSTALL/usr/bin/SkipAdClicker_ON.ico"
+      install -Dm644 "$CRAFT_PART_BUILD/build/bin/BrowserApplications.ini" "$CRAFT_PART_INSTALL/usr/bin/BrowserApplications.ini"
     prime:
       - -usr/include
       - -usr/lib/*/cmake

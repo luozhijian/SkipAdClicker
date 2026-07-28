@@ -454,7 +454,7 @@ std::vector<TriangleWithDescription> OpenCvLib::FindTriangles(const cv::Mat& can
         }
 
         const auto bounding = cv::boundingRect(contour);
-        if (bounding.width > 60 || bounding.height > 60 || bounding.width * bounding.height <= 90) {
+        if (bounding.width > 60 || bounding.height > 60 || bounding.width * bounding.height < 42) {
             continue;
         }
 
@@ -473,14 +473,14 @@ std::vector<TriangleWithDescription> OpenCvLib::FindTriangles(const cv::Mat& can
             return left.y < right.y;
         });
 
-        if (points[1].x - points[0].x >= 4) {
+        if ( std::abs( points[1].x - points[0].x ) >= 4) {
             continue;
         }
         if (std::abs(points[2].y * 2 - points[0].y - points[1].y) >= 6) {
             continue;
         }
 
-        const int height = points[1].y - points[0].y;
+        const int height = std::abs(points[1].y - points[0].y);
         const int width = std::abs(points[2].x - points[0].x);
         if (height > 50 || width > 50) {
             continue;

@@ -308,7 +308,7 @@ bool OSRelatedFunctions::IsBrowserVisible(std::unordered_set<std::wstring>* brow
             || attributes.width <= 0
             || attributes.height <= 0
             || IsHidden(display.get(), window, state_property, hidden_state)
-            || !IsOnCurrentDesktop(display.get(), window, window_desktop_property, current_desktop_property)
+            // || !IsOnCurrentDesktop(display.get(), window, window_desktop_property, current_desktop_property)
             || !IntersectsScreen(display.get(), window, attributes)) {
             continue;
         }

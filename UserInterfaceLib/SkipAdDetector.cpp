@@ -211,7 +211,7 @@ Rectangle ExpandSkipAdToSmallRectangleWord_And_SkipAd(const cv::Mat& image, cons
         return {};
     }
 
-    const Rectangle candidate{ x, y, covered.width * 5.5, covered.height + 4 };
+    const Rectangle candidate{ x, y, (int) (covered.width * 5.5), covered.height + 4 };
     return Intersect(ImageRectangle(image), candidate);
 }
 
@@ -653,7 +653,7 @@ std::optional<TriangleWithDescription> FindFirstSkipAdInGray(
     cv::Mat eroded;
     cv::erode(gray , eroded, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)), cv::Point(-1, -1), 2);
     const auto canny = OpenCvLib::ApplyCannyReturnRawIfFailed(
-        eroded,
+        gray,
         true,
         line_detection.setting_canny.threshold1,
         line_detection.setting_canny.threshold2);

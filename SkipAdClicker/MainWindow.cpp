@@ -719,29 +719,29 @@ void MainWindow::ShowAndRestore()
     setWindowState(Qt::WindowActive) ;
 
 #if defined(__linux__)
-    RequestX11Activation(winId());
+    // RequestX11Activation(winId());
 #endif
     ScheduleFocusRepaint();
 
-    this->showNormal();
-    this->raise();
-    this->activateWindow();
+//     this->showNormal();
+//     this->raise();
+//     this->activateWindow();
 
-   setWindowState(Qt::WindowActive) ;
+//    setWindowState(Qt::WindowActive) ;
 
-#if defined(__linux__)
-    QTimer::singleShot(200, this, [this]() {
-        showNormal();
-        raise();
-        activateWindow();
-        setWindowState(Qt::WindowActive) ;
-        RequestX11Activation(winId());
-        ScheduleFocusRepaint();
-        this->showNormal();
-        this->raise();
-        this->activateWindow();
-    });
-#endif
+// #if defined(__linux__)
+//     QTimer::singleShot(200, this, [this]() {
+//         showNormal();
+//         raise();
+//         activateWindow();
+//         setWindowState(Qt::WindowActive) ;
+//         RequestX11Activation(winId());
+//         ScheduleFocusRepaint();
+//         this->showNormal();
+//         this->raise();
+//         this->activateWindow();
+//     });
+// #endif
 }
 
 void MainWindow::ReStart()

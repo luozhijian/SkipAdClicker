@@ -61,7 +61,7 @@ std::vector<TriangleWithDescription> SmallTriangleDetector::FindSmallTriangles(c
         double centerY = centroids.at<double>(i, 1);
 
         // Filter 1: Area limits
-        if (!(area > 100 && area < 450)) continue;
+        if (!(area > 50 && area < 450)) continue;
 
         // Filter 2: Aspect ratio limits
         double aspectRatio = (w * 1.0) / h;
@@ -98,7 +98,7 @@ std::vector<TriangleWithDescription> SmallTriangleDetector::FindSmallTriangles(c
         int lastElement = listOfCount.back();
 
         // if first column has much more less point, we think it is some noise, make that triangle smaller
-        if (listOfCount[0] < h - 5)
+        if (listOfCount[0] < h /2 )
         {
             listOfCount.erase(listOfCount.begin());
             x += 1;
@@ -106,18 +106,26 @@ std::vector<TriangleWithDescription> SmallTriangleDetector::FindSmallTriangles(c
         }
 
         int prev_count= h; 
+        int current_col = 0;
         int count_not_descending = 0;
         for (int current_count : listOfCount) {
             if (prev_count - current_count < 0)
+            if ( current_col < 4 )
+            {
+                if ( current_count - h > 6 )
+                    count_not_descending += 1;;
+            }
+            else 
                 count_not_descending += 1;
             prev_count = current_count;
+            current_col +=1;
         }
         // triangle should be in descending order, if two many not, 
         if (count_not_descending >= 3)
             continue;
         
         // if the triangle is not sharp enough, it should be close to 1 
-        if (prev_count > 3)
+        if (prev_count > 4)
             continue;
 
         // If all conditions clear, track valid target

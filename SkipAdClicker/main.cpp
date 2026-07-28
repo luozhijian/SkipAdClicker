@@ -113,18 +113,21 @@ int main(int argc, char* argv[])
     automationtest::app::g_SharedMemorySemaphore =
         new automationtest::app::SharedMemorySemaphore(SystemInfo::GetCurrentProcessName());
     const bool another_instance_running = automationtest::app::g_SharedMemorySemaphore->Exists();
-    if (another_instance_running)
-        automationtest::utilities::Logger::Debug( "Semaphore name: " + automationtest::app::g_SharedMemorySemaphore->Name() );
+ 
     if (another_instance_running)
     {
+        automationtest::utilities::Logger::Debug( "Semaphore name: " + automationtest::app::g_SharedMemorySemaphore->Name() );
         automationtest::app::g_SharedMemorySemaphore->OpenForConsumer();
         const auto running_version = automationtest::app::g_SharedMemorySemaphore->RunningVersion();
-        const bool current_is_newer =
+        bool current_is_newer =
             running_version.empty()
             || QVersionNumber::compare(
                 QVersionNumber::fromString(QString::fromStdString(current_version)),
                 QVersionNumber::fromString(QString::fromStdString(running_version))) > 0;
 
+        if ( ! SystemInfo::IsAnotherProcessWithSameNameRunning () ) {
+            current_is_newer = true;
+        }
         if (current_is_newer)
         {
             automationtest::utilities::Logger::Debug(
@@ -140,7 +143,7 @@ int main(int argc, char* argv[])
         if (current_is_newer)
         {
             for (int attempt = 0;
-                 attempt < 100 && automationtest::app::g_SharedMemorySemaphore->Exists();
+                 attempt < 20 && automationtest::app::g_SharedMemorySemaphore->Exists();
                  ++attempt)
             {
                 QThread::msleep(100);
@@ -158,17 +161,18 @@ int main(int argc, char* argv[])
                     {
                         QThread::msleep(100);
                     }
-
-                    automationtest::app::g_SharedMemorySemaphore->Close();
-#if defined(__linux__)
-                    automationtest::app::g_SharedMemorySemaphore->Clear();
-#endif
                 }
                 else
                 {
                     automationtest::utilities::Logger::Error(
                         "Failed to terminate the previous instance");
                 }
+                
+                    automationtest::app::g_SharedMemorySemaphore->Close();
+#if defined(__linux__)
+                    automationtest::app::g_SharedMemorySemaphore->Clear();
+#endif
+
             }
         }
 
