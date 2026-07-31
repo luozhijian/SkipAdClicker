@@ -528,17 +528,25 @@ std::pair<int, float> OpenCvLib::VerifySameCodeAndGetTheColor(const cv::Mat& gra
 
     std::vector<int> histogram(256, 0);
     int total = 0;
+	int sum_color = 0;
     for (int row = min_y; row <= max_y; ++row) {
         for (int col = min_x; col <= max_x; ++col) {
             if (!PointInTriangle(Point{ col, row }, points)) {
                 continue;
             }
-            ++histogram[MatExtension::GetByteValue(gray, row, col)];
+            int temp_i = MatExtension::GetByteValue(gray, row, col);
+            sum_color += temp_i;
+            ++histogram[temp_i];
             ++total;
         }
     }
+ 
+	double average_color = total > 0 ? static_cast<double>(sum_color) / static_cast<double>(total) : 0.0;
 
-    if (total == 0) {
+	histogram[0] = 0; // ignore black color
+
+	//if the trianagle is too dark, we consider it as not a valid triangle
+    if (total == 0 || average_color < 80) {
         return { 0, 0.0F };
     }
 
